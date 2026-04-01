@@ -2249,6 +2249,56 @@ end
 
 
 
+
+function Menu.InfiniteJumpBug(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    if NetworkRequestControlOfEntity then
+        for i = 1, 15 do
+            NetworkRequestControlOfEntity(ped)
+            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                break
+            end
+            Wait(0)
+        end
+    end
+
+    CreateThread(function()
+        for i = 1, 40 do
+            if DoesEntityExist(ped) then
+                if SetPedToRagdoll then
+                    SetPedToRagdoll(ped, 600, 600, 0, true, true, false)
+                end
+
+                if ApplyForceToEntity then
+                    ApplyForceToEntity(
+                        ped,
+                        1,
+                        math.random(-5,5),
+                        math.random(-5,5),
+                        150.0,
+                        0.0,0.0,0.0,
+                        0,
+                        true,true,true,false,true
+                    )
+                end
+
+                if SetEntityVelocity then
+                    SetEntityVelocity(ped, 0.0, 0.0, 25.0)
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+
 function Menu.CloneNPCAttackPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
@@ -5161,6 +5211,101 @@ function Menu.FIBAllVehicles()
     end
 end
 
+
+function Menu.MagnetCars()
+    if not EnumerateVehicles then return end
+    if not PlayerPedId or not GetEntityCoords or not SetEntityCoords then return end
+
+    local myPed = PlayerPedId()
+    local myCoords = GetEntityCoords(myPed)
+    local px = myCoords.x or myCoords[1] or 0.0
+    local py = myCoords.y or myCoords[2] or 0.0
+    local pz = myCoords.z or myCoords[3] or 0.0
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist(vehicle) then
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+            SetEntityCoords(
+                vehicle,
+                px + math.random(-2, 2),
+                py + math.random(-2, 2),
+                pz,
+                false, false, false, false
+            )
+        end
+    end
+end
+
+function Menu.FlipAllVehicles()
+    if not EnumerateVehicles then return end
+    if not GetEntityRotation or not SetEntityRotation then return end
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist(vehicle) then
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+
+            local rot = GetEntityRotation(vehicle, 2)
+            local rx = (rot.x or rot[1] or 0.0) + 180.0
+            local ry = (rot.y or rot[2] or 0.0)
+            local rz = (rot.z or rot[3] or 0.0)
+            SetEntityRotation(vehicle, rx, ry, rz, 2, true)
+        end
+    end
+end
+
+function Menu.SpinCarsTornado()
+    if not EnumerateVehicles then return end
+    if not GetEntityCoords or not SetEntityRotation or not ApplyForceToEntity or not PlayerPedId then return end
+
+    local myPed = PlayerPedId()
+    local myCoords = GetEntityCoords(myPed)
+    local cx = myCoords.x or myCoords[1] or 0.0
+    local cy = myCoords.y or myCoords[2] or 0.0
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist(vehicle) then
+            local vCoords = GetEntityCoords(vehicle)
+            local vx = vCoords.x or vCoords[1] or 0.0
+            local vy = vCoords.y or vCoords[2] or 0.0
+
+            local dx = vx - cx
+            local dy = vy - cy
+            local dist = math.sqrt((dx * dx) + (dy * dy))
+            if dist < 0.1 then dist = 0.1 end
+
+            local pullX = (-dy / dist) * 80.0
+            local pullY = (dx / dist) * 80.0
+
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+
+            local rot = GetEntityRotation(vehicle, 2)
+            SetEntityRotation(
+                vehicle,
+                (rot.x or 0.0) + math.random(120, 220),
+                (rot.y or 0.0) + math.random(120, 220),
+                (rot.z or 0.0) + math.random(120, 220),
+                2,
+                true
+            )
+
+            ApplyForceToEntity(
+                vehicle,
+                1,
+                pullX, pullY, 45.0,
+                0.0, 0.0, 0.0,
+                0,
+                true, true, true, false, true
+            )
+        end
+    end
+end
+
 function Menu.GunNPCAttackPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId then return end
@@ -5367,6 +5512,16 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.LaunchPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Clone NPC Attack"
+                },
+                {
+                    name = "Infinite Jump Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.InfiniteJumpBug(selectedPlayer)
                     end
                 },
                 {
