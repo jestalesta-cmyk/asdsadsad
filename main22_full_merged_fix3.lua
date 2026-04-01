@@ -71,39 +71,13 @@ end
 
 Menu.Banner = {
     enabled = true,
-    imageUrl = "https://i.imgur.com/84aUsZL.png",
+    imageUrl = "https://i.imgur.com/cOFPinI.gif",
     height = 114
 }
 
 Menu.bannerTexture = nil
 Menu.bannerWidth = 0
 Menu.bannerHeight = 0
-Menu.LoadingLogoTexture = nil
-Menu.LoadingLogoWidth = 0
-Menu.LoadingLogoHeight = 0
-
-function Menu.LoadLoadingLogoTexture(url)
-    if not url or url == "" then return end
-    if not Susano or not Susano.HttpGet or not Susano.LoadTextureFromBuffer then return end
-
-    local function doLoad()
-        local status, body = Susano.HttpGet(url)
-        if status == 200 and body and #body > 0 then
-            local textureId, width, height = Susano.LoadTextureFromBuffer(body)
-            if textureId and textureId ~= 0 then
-                Menu.LoadingLogoTexture = textureId
-                Menu.LoadingLogoWidth = width
-                Menu.LoadingLogoHeight = height
-            end
-        end
-    end
-
-    if CreateThread then
-        CreateThread(function() pcall(doLoad) end)
-    else
-        pcall(doLoad)
-    end
-end
 
 function Menu.LoadBannerTexture(url)
     if not url or url == "" then return end
@@ -1401,7 +1375,7 @@ end
 
 function Menu.DrawLoadingBar(alpha)
     if alpha <= 0 then return end
-
+    
     local screenWidth = 1920
     local screenHeight = 1080
     if Susano and Susano.GetScreenWidth and Susano.GetScreenHeight then
@@ -1410,84 +1384,95 @@ function Menu.DrawLoadingBar(alpha)
     end
 
     local centerX = screenWidth / 2
-    local centerY = screenHeight / 2
-    local accent = (Menu.GetPremiumAccent and Menu.GetPremiumAccent()) or (Menu.GetAccentColor and Menu.GetAccentColor()) or { r = 148, g = 0, b = 211 }
-    local progress = math.max(0.0, math.min(1.0, (Menu.LoadingProgress or 0.0) / 100.0))
-    local percent = math.floor(progress * 100)
-    local pulse = (math.sin((GetGameTimer and GetGameTimer() or 0) / 220.0) + 1.0) * 0.5
+    local centerY = screenHeight - 150
+    local radius = 40
+    local thickness = 8
 
-    if Susano and Susano.DrawBlur then
-        Susano.DrawBlur(0, 0, screenWidth, screenHeight, 10.0)
+    local currentTime = GetGameTimer() or 0
+    local elapsedTime = 0
+    if Menu.LoadingStartTime then
+        elapsedTime = currentTime - Menu.LoadingStartTime
     end
 
-    if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(0, 0, screenWidth, screenHeight, 0.0, 0.0, 0.0, 0.62 * alpha, 0)
+    local loadingText = ""
+    if elapsedTime < 1000 then
+        loadingText = "Injecting"
+    elseif elapsedTime < 2000 then
+        loadingText = "Have Fun !"
     else
-        Menu.DrawRect(0, 0, screenWidth, screenHeight, 0, 0, 0, math.floor(158 * alpha))
+        loadingText = "Have Fun !"
     end
 
-    local panelW = 500
-    local panelH = 250
-    local panelX = centerX - (panelW / 2)
-    local panelY = centerY - (panelH / 2)
-
-    if Menu.DrawSoftShadowModern then
-        Menu.DrawSoftShadowModern(panelX + 8, panelY + 10, panelW - 16, panelH - 4, 18)
+    if loadingText ~= "" then
+        local textSize = 18
+        local textWidth = 0
+        if Susano and Susano.GetTextWidth then
+            textWidth = Susano.GetTextWidth(loadingText, textSize)
+        else
+            textWidth = string.len(loadingText) * 10
+        end
+        local textX = centerX - (textWidth / 2)
+        local textY = centerY - radius - 40
+        Menu.DrawText(textX, textY, loadingText, textSize, 1.0, 1.0, 1.0, 1.0 * alpha)
     end
-    if Menu.DrawFramedPanelModern then
-        Menu.DrawFramedPanelModern(panelX, panelY, panelW, panelH, { r = 11, g = 15, b = 24 }, 0.94, accent, 0.48, 18, 1)
-        Menu.DrawRoundedPanelModern(panelX + 1, panelY + 1, panelW - 2, panelH - 2, { r = 255, g = 255, b = 255 }, 0.02, 17)
-        Menu.DrawRoundedPanelModern(panelX + 1, panelY + 1, panelW - 2, 76, accent, 0.08 + (pulse * 0.04), 17)
+
+    local segments = 90
+    local step = 360 / segments
+    local startAngle = -90
+
+    for i = 0, segments do
+        local angle = math.rad(startAngle + (i * step))
+        local px = centerX + radius * math.cos(angle)
+        local py = centerY + radius * math.sin(angle)
+        local outlineSize = thickness + 4
+        
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(px - outlineSize/2, py - outlineSize/2, outlineSize, outlineSize, 0.0, 0.0, 0.0, 1.0 * alpha, outlineSize/2)
+        else
+            Menu.DrawRect(px - outlineSize/2, py - outlineSize/2, outlineSize, outlineSize, 0, 0, 0, 255 * alpha)
+        end
     end
 
-    local logoW = 240 + (pulse * 10)
-    local logoH = 84 + (pulse * 4)
-    local logoX = centerX - (logoW / 2)
-    local logoY = panelY + 34
+    for i = 0, segments do
+        local angle = math.rad(startAngle + (i * step))
+        local px = centerX + radius * math.cos(angle)
+        local py = centerY + radius * math.sin(angle)
+        
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(px - thickness/2, py - thickness/2, thickness, thickness, 0.15, 0.15, 0.15, 1.0 * alpha, thickness/2)
+        else
+            Menu.DrawRect(px - thickness/2, py - thickness/2, thickness, thickness, 38, 38, 38, 255 * alpha)
+        end
+    end
 
-    if Menu.LoadingLogoTexture and Menu.LoadingLogoTexture > 0 and Susano and Susano.DrawImage then
-        Susano.DrawImage(Menu.LoadingLogoTexture, logoX, logoY, logoW, logoH, 1, 1, 1, 0.98 * alpha, 0)
+    local progressSegments = math.floor(segments * (Menu.LoadingProgress / 100.0))
+    local accentR = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.r) and (Menu.Colors.SelectedBg.r / 255.0) or 1.0
+    local accentG = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.g) and (Menu.Colors.SelectedBg.g / 255.0) or 0.0
+    local accentB = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.b) and (Menu.Colors.SelectedBg.b / 255.0) or 1.0
+
+    for i = 0, progressSegments do
+        local angle = math.rad(startAngle + (i * step))
+        local px = centerX + radius * math.cos(angle)
+        local py = centerY + radius * math.sin(angle)
+        
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(px - thickness/2, py - thickness/2, thickness + 1, thickness + 1, accentR, accentG, accentB, 1.0 * alpha, (thickness + 1)/2)
+        else
+            Menu.DrawRect(px - thickness/2, py - thickness/2, thickness + 1, thickness + 1, accentR * 255, accentG * 255, accentB * 255, 255 * alpha)
+        end
+    end
+
+    local percentText = string.format("%.0f%%", Menu.LoadingProgress)
+    local percentTextSize = 16
+    local percentTextWidth = 0
+    if Susano and Susano.GetTextWidth then
+        percentTextWidth = Susano.GetTextWidth(percentText, percentTextSize)
     else
-        local fallbackText = "HEROS"
-        local textW = Susano and Susano.GetTextWidth and Susano.GetTextWidth(fallbackText, 40) or 120
-        Menu.DrawText(centerX - (textW / 2), logoY + 18, fallbackText, 40, 1.0, 1.0, 1.0, 1.0 * alpha)
+        percentTextWidth = string.len(percentText) * 9
     end
-
-    local statusText = "Successfully Injected"
-    local statusW = Susano and Susano.GetTextWidth and Susano.GetTextWidth(statusText, 14) or 160
-    local dotX = centerX - (statusW / 2) - 18
-    local statusY = panelY + 126
-
-    if Menu.DrawRoundedPanelModern then
-        Menu.DrawRoundedPanelModern(dotX, statusY + 4, 12, 12, { r = 50, g = 255, b = 120 }, 0.95 * alpha, 6)
-    end
-    Menu.DrawText(dotX + 20, statusY, statusText, 14, 0.92, 0.98, 0.95, 0.98 * alpha)
-
-    local keyLabel = "RSHIFT"
-    local hintText = "to open the menu"
-    local keyW = (Menu.GetTextWidthModern and Menu.GetTextWidthModern(keyLabel, 11) or 44) + 18
-    local keyX = centerX - (keyW / 2) - 36
-    local keyY = panelY + 160
-
-    if Menu.DrawFramedPanelModern then
-        Menu.DrawFramedPanelModern(keyX, keyY, keyW, 24, accent, 0.30, accent, 0.60, 8, 1)
-    end
-    Menu.DrawText(keyX + 10, keyY + 5, keyLabel, 11, 0.97, 0.97, 1.0, 1.0 * alpha)
-    Menu.DrawText(keyX + keyW + 10, keyY + 5, hintText, 11, 0.66, 0.70, 0.78, 0.96 * alpha)
-
-    local barW = 280
-    local barH = 8
-    local barX = centerX - (barW / 2)
-    local barY = panelY + 204
-
-    if Menu.DrawFramedPanelModern then
-        Menu.DrawFramedPanelModern(barX, barY, barW, barH, { r = 7, g = 10, b = 16 }, 0.88, { r = 30, g = 36, b = 54 }, 0.45, 4, 1)
-        Menu.DrawRoundedPanelModern(barX + 1, barY + 1, math.max(6, (barW - 2) * progress), barH - 2, accent, 0.96, 4)
-    end
-
-    local percentText = tostring(percent) .. "%"
-    local percentW = Susano and Susano.GetTextWidth and Susano.GetTextWidth(percentText, 13) or 36
-    Menu.DrawText(centerX - (percentW / 2), barY + 16, percentText, 13, 0.98, 0.98, 1.0, 0.98 * alpha)
+    local percentTextX = centerX - (percentTextWidth / 2)
+    local percentTextY = centerY - (percentTextSize / 2)
+    Menu.DrawText(percentTextX, percentTextY, percentText, percentTextSize, 1.0, 1.0, 1.0, 1.0 * alpha)
 end
 
 function Menu.DrawFooter()
@@ -3198,6 +3183,85 @@ function Menu.DrawFooter()
 end
 
 
+
+-- ===== INJECT UI WITH LOADING BAR =====
+Menu.InjectUI = {
+    visible = true,
+    alpha = 0.0,
+    progress = 0.0
+}
+
+CreateThread(function()
+    while Menu.InjectUI.visible do
+        Wait(0)
+
+        if Menu.InjectUI.alpha < 1.0 then
+            Menu.InjectUI.alpha = Menu.InjectUI.alpha + 0.02
+        end
+
+        if Menu.InjectUI.progress < 1.0 then
+            Menu.InjectUI.progress = math.min(1.0, Menu.InjectUI.progress + 0.0035)
+        end
+
+        local a = Menu.InjectUI.alpha
+        local pulse = (math.sin(GetGameTimer() / 260) + 1.0) * 0.5
+
+        local w, h = 0.30, 0.13
+        local x, y = 0.5 - w / 2, 0.5 - h / 2
+
+        if Susano and Susano.DrawBlur then
+            Susano.DrawBlur(0.0, 0.0, 1.0, 1.0, 14.0)
+        end
+
+        DrawRect(x + w / 2, y + h / 2, w, h, 8, 10, 16, math.floor(185 * a))
+
+        SetTextScale(0.60, 0.60)
+        SetTextCentre(true)
+        SetTextColour(255, 255, 255, math.floor(255 * a))
+        BeginTextCommandDisplayText("STRING")
+        AddTextComponentSubstringPlayerName("~b~susano")
+        EndTextCommandDisplayText(0.5, y + 0.028)
+
+        SetTextScale(0.32, 0.32)
+        SetTextCentre(true)
+        SetTextColour(200, 255, 210, math.floor(255 * a))
+        BeginTextCommandDisplayText("STRING")
+        AddTextComponentSubstringPlayerName("Successfully Injected")
+        EndTextCommandDisplayText(0.5, y + 0.062)
+
+        local barW, barH = 0.22, 0.010
+        local barX, barY = 0.5 - barW / 2, y + 0.088
+
+        DrawRect(barX + barW / 2, barY + barH / 2, barW, barH, 20, 24, 34, math.floor(220 * a))
+
+        local fillW = barW * Menu.InjectUI.progress
+        if fillW > 0.0 then
+            DrawRect(
+                barX - (barW / 2) + (fillW / 2) + (barW / 2),
+                barY + barH / 2,
+                fillW,
+                barH,
+                120 + math.floor(40 * pulse),
+                80,
+                255,
+                math.floor(235 * a)
+            )
+        end
+
+        SetTextScale(0.28, 0.28)
+        SetTextCentre(true)
+        SetTextColour(235, 235, 235, math.floor(255 * a))
+        BeginTextCommandDisplayText("STRING")
+        AddTextComponentSubstringPlayerName("Press ~p~RSHIFT~w~ to open menu")
+        EndTextCommandDisplayText(0.5, y + 0.105)
+
+        if Menu.InjectUI.progress >= 1.0 then
+            Wait(1200)
+            Menu.InjectUI.visible = false
+        end
+    end
+end)
+
 return Menu.Colors.SelectedBg or { r = 148, g = 0, b = 211 }
 end
 
@@ -4305,7 +4369,6 @@ end
 if Menu.Banner.enabled and Menu.Banner.imageUrl then
     Menu.LoadBannerTexture(Menu.Banner.imageUrl)
 end
-Menu.LoadLoadingLogoTexture("https://i.imgur.com/84aUsZL.png")
 
 
 
