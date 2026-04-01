@@ -2250,6 +2250,9 @@ end
 
 
 
+
+
+
 function Menu.InfiniteJumpBug(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
@@ -2275,14 +2278,19 @@ function Menu.InfiniteJumpBug(playerData)
                     end
 
                     if SetEntityVelocity then
-                        SetEntityVelocity(ped, math.random(-3,3) * 1.0, math.random(-3,3) * 1.0, 30.0)
+                        SetEntityVelocity(
+                            ped,
+                            math.random(-3, 3) * 1.0,
+                            math.random(-3, 3) * 1.0,
+                            30.0
+                        )
                     end
 
                     if ApplyForceToEntity then
                         ApplyForceToEntity(
                             ped, 1,
-                            math.random(-8,8) * 1.0,
-                            math.random(-8,8) * 1.0,
+                            math.random(-8, 8) * 1.0,
+                            math.random(-8, 8) * 1.0,
                             180.0,
                             0.0, 0.0, 0.0,
                             0,
@@ -2292,54 +2300,11 @@ function Menu.InfiniteJumpBug(playerData)
 
                     if GetEntityCoords and AddExplosion then
                         local c = GetEntityCoords(ped)
-                        AddExplosion(c.x, c.y, c.z - 1.0, 4, 0.0, false, false, 0.0, false)
+                        local x = c.x or c[1] or 0.0
+                        local y = c.y or c[2] or 0.0
+                        local z = c.z or c[3] or 0.0
+                        AddExplosion(x, y, z - 1.0, 4, 0.0, false, false, 0.0, false)
                     end
-                end
-            end
-            Wait(120)
-        end
-    end)
-end
-    if not GetPlayerFromServerId or not GetPlayerPed then return end
-
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-
-    local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
-
-    if NetworkRequestControlOfEntity then
-        for i = 1, 15 do
-            NetworkRequestControlOfEntity(ped)
-            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
-                break
-            end
-            Wait(0)
-        end
-    end
-
-    CreateThread(function()
-        for i = 1, 40 do
-            if DoesEntityExist(ped) then
-                if SetPedToRagdoll then
-                    SetPedToRagdoll(ped, 600, 600, 0, true, true, false)
-                end
-
-                if ApplyForceToEntity then
-                    ApplyForceToEntity(
-                        ped,
-                        1,
-                        math.random(-5,5),
-                        math.random(-5,5),
-                        150.0,
-                        0.0,0.0,0.0,
-                        0,
-                        true,true,true,false,true
-                    )
-                end
-
-                if SetEntityVelocity then
-                    SetEntityVelocity(ped, 0.0, 0.0, 25.0)
                 end
             end
             Wait(120)
