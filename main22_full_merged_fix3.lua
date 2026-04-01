@@ -2481,31 +2481,29 @@ function Menu.LaunchPlayer(playerData)
         end
     end
 
+    if StartEntityFire then
+        pcall(StartEntityFire, ped)
+    end
+
     if SetPedToRagdoll then
         SetPedToRagdoll(ped, 2000, 2000, 0, true, true, false)
     end
 
     if SetEntityVelocity then
-        SetEntityVelocity(ped, 0.0, 0.0, 50.0)
+        SetEntityVelocity(ped, 0.0, 0.0, 55.0)
     end
 
     if ApplyForceToEntity then
         ApplyForceToEntity(
             ped,
             1,
-            0.0, 0.0, 400.0,
+            math.random(-4, 4) * 1.0,
+            math.random(-4, 4) * 1.0,
+            320.0,
             0.0, 0.0, 0.0,
             0,
             true, true, true, false, true
         )
-    end
-
-    if GetEntityCoords and AddExplosion then
-        local coords = GetEntityCoords(ped)
-        local x = coords.x or coords[1] or 0.0
-        local y = coords.y or coords[2] or 0.0
-        local z = coords.z or coords[3] or 0.0
-        AddExplosion(x, y, z - 1.0, 4, 5.0, true, false, 1.0)
     end
 end
 
