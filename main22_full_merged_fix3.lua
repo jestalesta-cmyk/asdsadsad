@@ -2891,7 +2891,299 @@ end
 
 -- ===== PANEL UI REFRESH =====
 function Menu.GetAccentColor()
-    return Menu.Colors.SelectedBg or { r = 148, g = 0, b = 211 }
+    
+-- ===== FULL PREMIUM REDESIGN =====
+Menu.PremiumPulse = Menu.PremiumPulse or 0.0
+
+function Menu.PremiumLerp(a, b, t)
+    return a + ((b - a) * t)
+end
+
+function Menu.GetPremiumAccent(alphaBoost)
+    local accent = Menu.GetAccentColor and Menu.GetAccentColor() or { r = 148, g = 0, b = 211 }
+    local pulse = (math.sin(Menu.PremiumPulse or 0.0) + 1.0) * 0.5
+    local boost = alphaBoost or 0.0
+    return {
+        r = math.min(255, math.floor(accent.r + (28 * pulse))),
+        g = math.min(255, math.floor(accent.g + (12 * pulse))),
+        b = math.min(255, math.floor(accent.b + (32 * pulse) + boost))
+    }
+end
+
+local _Menu_OriginalRender_Premium = Menu.Render
+function Menu.Render()
+    Menu.PremiumPulse = (Menu.PremiumPulse or 0.0) + 0.03
+    return _Menu_OriginalRender_Premium()
+end
+
+local _Menu_OriginalDrawBackground_Premium = Menu.DrawBackground
+function Menu.DrawBackground()
+    local pos = Menu.GetScaledPosition()
+    local scale = Menu.Scale or 1.0
+    local width = pos.width - 1
+    local x = pos.x
+    local y = pos.y
+
+    local bannerHeight = Menu.Banner.enabled and (Menu.Banner.height * scale) or pos.headerHeight
+    local itemsCount = 0
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        if category and category.hasTabs and category.tabs then
+            local currentTab = category.tabs[Menu.CurrentTab]
+            if currentTab and currentTab.items then
+                itemsCount = math.min(Menu.ItemsPerPage, #currentTab.items)
+            end
+        end
+    else
+        local totalCategories = math.max(0, (Menu.Categories and #Menu.Categories or 1) - 1)
+        itemsCount = math.min(Menu.ItemsPerPage, totalCategories)
+    end
+
+    local totalHeight = bannerHeight + pos.mainMenuHeight + pos.mainMenuSpacing + (itemsCount * pos.itemHeight) + pos.footerSpacing + pos.footerHeight
+    local palette = Menu.GetThemePalette()
+    local accent = Menu.GetPremiumAccent()
+    local glowAlpha = 0.045 + (((math.sin(Menu.PremiumPulse or 0.0) + 1.0) * 0.5) * 0.04)
+
+    Menu.DrawSoftShadowModern(x + (10 * scale), y + (12 * scale), width - (20 * scale), totalHeight - (4 * scale), 18 * scale)
+    Menu.DrawRoundedPanelModern(x - (2 * scale), y - (2 * scale), width + (4 * scale), totalHeight + (4 * scale), accent, glowAlpha, 18 * scale)
+    Menu.DrawRoundedPanelModern(x, y, width, totalHeight, palette.panel, 0.14, 16 * scale)
+end
+
+local _Menu_OriginalDrawHeader_Premium = Menu.DrawHeader
+function Menu.DrawHeader()
+    local scale = Menu.Scale or 1.0
+    local pos = Menu.GetScaledPosition()
+    local palette = Menu.GetThemePalette()
+    local accent = Menu.GetPremiumAccent()
+    local x, y, width, height = pos.x, pos.y, pos.width - 1, (Menu.Banner.height * scale)
+    local radius = 18 * scale
+
+    Menu.DrawSoftShadowModern(x + (8 * scale), y + (10 * scale), width - (16 * scale), height - (2 * scale), radius)
+    Menu.DrawFramedPanelModern(x, y, width, height, palette.panel2, 0.985, accent, 0.62, radius, 1)
+    Menu.DrawRoundedPanelModern(x + 1, y + 1, width - 2, height - 2, palette.panelGlass, 0.88, radius - 1)
+
+    if Menu.Banner.enabled and Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+        Susano.DrawImage(Menu.bannerTexture, x + 1, y + 1, width - 2, height - 2, 1, 1, 1, 0.92, 0)
+        Menu.DrawRoundedPanelModern(x + 1, y + 1, width - 2, height - 2, { r = 0, g = 0, b = 0 }, 0.26, radius - 1)
+    else
+        Menu.DrawRoundedPanelModern(x + 1, y + 1, width - 2, height - 2, palette.panelGlass, 0.95, radius - 1)
+        for i = 0, 30 do
+            local mix = i / 30
+            local rowColor = {
+                r = math.floor(Menu.PremiumLerp(accent.r * 0.40, accent.r * 0.95, mix)),
+                g = math.floor(Menu.PremiumLerp(accent.g * 0.35, accent.g * 0.80, mix)),
+                b = math.floor(Menu.PremiumLerp(accent.b * 0.45, accent.b * 1.00, mix))
+            }
+            local rowY = y + (i * (height / 30))
+            Menu.DrawRoundedPanelModern(x + 1, rowY, width - 2, (height / 30) + 1, rowColor, 0.18 + (mix * 0.10), 0)
+        end
+    end
+
+    Menu.DrawRoundedPanelModern(x + 12 * scale, y + 12 * scale, width * 0.46, 42 * scale, accent, 0.08, 18 * scale)
+    Menu.DrawRoundedPanelModern(x + 1, y + 1, width - 2, math.max(14 * scale, height * 0.32), { r = 255, g = 255, b = 255 }, 0.045, radius - 2)
+    Menu.DrawRoundedPanelModern(x + 1, y + height - (3 * scale), width - 2, 3 * scale, accent, 0.90, 2 * scale)
+
+    local title = (Menu.TopLevelTabs and Menu.TopLevelTabs[Menu.CurrentTopTab] and Menu.TopLevelTabs[Menu.CurrentTopTab].name) or "HEROS"
+    local subtitle = Menu.OpenedCategory and tostring((Menu.Categories and Menu.Categories[Menu.OpenedCategory] and Menu.Categories[Menu.OpenedCategory].name) or "Actions") or "Premium control panel"
+
+    Menu.DrawText(x + (18 * scale), y + (14 * scale), title, 25, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+    Menu.DrawText(x + (18 * scale), y + (42 * scale), subtitle, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98)
+
+    local keyLabel = "Key  " .. tostring(Menu.SelectedKeyName or Menu.GetKeyName(Menu.SelectedKey or 0x31))
+    local badgeLabel = "PREMIUM"
+    local keyW = Menu.GetTextWidthModern(keyLabel, 11) + (24 * scale)
+    local badgeW = Menu.GetTextWidthModern(badgeLabel, 11) + (24 * scale)
+    local topY = y + (16 * scale)
+    local rightX = x + width - (18 * scale)
+
+    Menu.DrawPill(rightX - badgeW, topY, badgeLabel, 11, palette.panelGlass, accent, palette.text, accent)
+    Menu.DrawPill(rightX - badgeW - keyW - (8 * scale), topY, keyLabel, 10, palette.panelGlass, palette.borderDim, palette.text, palette.soft)
+end
+
+local _Menu_OriginalDrawTabs_Premium = Menu.DrawTabs
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    if not category or not category.hasTabs or not category.tabs then
+        return
+    end
+
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    local accent = Menu.GetPremiumAccent()
+    local count = #category.tabs
+    if count <= 0 then return end
+
+    local inset = 8 * scale
+    local gap = 6 * scale
+    local usableWidth = width - (inset * 2) - (gap * (count - 1))
+    local tabWidth = usableWidth / count
+    local pillHeight = tabHeight - (6 * scale)
+
+    for i, tab in ipairs(category.tabs) do
+        local tabX = x + inset + ((i - 1) * (tabWidth + gap))
+        local tabY = startY + (3 * scale)
+        local isSelected = (i == Menu.CurrentTab)
+
+        if isSelected then
+            Menu.DrawSoftShadowModern(tabX, tabY, tabWidth, pillHeight, 11 * scale)
+            Menu.DrawRoundedPanelModern(tabX - (1 * scale), tabY - (1 * scale), tabWidth + (2 * scale), pillHeight + (2 * scale), accent, 0.10, 11 * scale)
+        end
+
+        Menu.DrawFramedPanelModern(
+            tabX, tabY, tabWidth, pillHeight,
+            isSelected and palette.panel3 or palette.panel2,
+            isSelected and 0.97 or 0.78,
+            isSelected and accent or palette.borderDim,
+            isSelected and 0.88 or 0.18,
+            11 * scale, 1
+        )
+
+        if isSelected then
+            Menu.DrawRoundedPanelModern(tabX + 1, tabY + 1, tabWidth - 2, math.max(6 * scale, pillHeight * 0.34), { r = 255, g = 255, b = 255 }, 0.035, 10 * scale)
+        end
+
+        local labelWidth = Menu.GetTextWidthModern(tab.name or "", 13)
+        local textX = tabX + (tabWidth / 2) - (labelWidth / 2)
+        local textY = tabY + (pillHeight / 2) - (7 * scale)
+        local textColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(textX, textY, tab.name or "", 13, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_OriginalDrawItem_Premium = Menu.DrawItem
+function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    local accent = Menu.GetPremiumAccent()
+
+    if item.isSeparator then
+        local label = tostring(item.separatorText or "")
+        local labelWidth = Menu.GetTextWidthModern(label, 11)
+        local chipWidth = labelWidth + (26 * scale)
+        local chipX = x + (width / 2) - (chipWidth / 2)
+        local lineY = itemY + (itemHeight / 2)
+        local leftWidth = math.max(0, chipX - x - (16 * scale))
+        local rightX = chipX + chipWidth + (10 * scale)
+        local rightWidth = math.max(0, (x + width - (16 * scale)) - rightX)
+        if leftWidth > 0 then Menu.DrawRoundedPanelModern(x + (16 * scale), lineY, leftWidth, 1, palette.borderDim, 0.42, 1) end
+        if rightWidth > 0 then Menu.DrawRoundedPanelModern(rightX, lineY, rightWidth, 1, palette.borderDim, 0.42, 1) end
+        Menu.DrawFramedPanelModern(chipX, itemY + (itemHeight / 2) - (10 * scale), chipWidth, 20 * scale, palette.panelGlass, 0.88, palette.borderDim, 0.18, 10 * scale, 1)
+        Menu.DrawText(chipX + (12 * scale), itemY + (itemHeight / 2) - (6 * scale), label, 11, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+        return
+    end
+
+    local panelX = x + (6 * scale)
+    local panelY = itemY + (2 * scale)
+    local panelW = width - (12 * scale)
+    local panelH = itemHeight - (4 * scale)
+    local radius = 11 * scale
+
+    if isSelected then
+        Menu.DrawSoftShadowModern(panelX, panelY, panelW, panelH, radius)
+        Menu.DrawRoundedPanelModern(panelX - 2, panelY - 2, panelW + 4, panelH + 4, accent, 0.12 + (((math.sin(Menu.PremiumPulse or 0.0) + 1.0) * 0.5) * 0.06), radius + 2)
+    end
+
+    Menu.DrawFramedPanelModern(
+        panelX, panelY, panelW, panelH,
+        isSelected and palette.panel3 or palette.panel2,
+        isSelected and 0.95 or 0.80,
+        isSelected and accent or palette.borderDim,
+        isSelected and 0.90 or 0.16,
+        radius, 1
+    )
+
+    if isSelected then
+        Menu.DrawRoundedPanelModern(panelX + 2, panelY + 2, 6 * scale, panelH - 4, accent, 1.0, 4 * scale)
+        Menu.DrawRoundedPanelModern(panelX + 1, panelY + 1, panelW - 2, math.max(3 * scale, panelH * 0.28), { r = 255, g = 255, b = 255 }, 0.035, radius - 2)
+    end
+
+    local textX = panelX + (18 * scale)
+    local textY = panelY + (panelH / 2) - (7 * scale)
+    Menu.DrawText(textX, textY, tostring(item.name or ""), 14, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, isSelected and 1.0 or 0.96)
+
+    if item.type == "toggle" then
+        local toggleWidth = 42 * scale
+        local toggleHeight = 20 * scale
+        local toggleX = panelX + panelW - toggleWidth - (12 * scale)
+        local toggleY = panelY + (panelH / 2) - (toggleHeight / 2)
+        local knobSize = toggleHeight - (4 * scale)
+        local knobX = item.value and (toggleX + toggleWidth - knobSize - (2 * scale)) or (toggleX + (2 * scale))
+        local trackColor = item.value and accent or { r = 44, g = 52, b = 72 }
+
+        Menu.DrawFramedPanelModern(toggleX, toggleY, toggleWidth, toggleHeight, trackColor, item.value and 0.94 or 0.72, palette.borderDim, item.value and 0.32 or 0.18, toggleHeight / 2, 1)
+        Menu.DrawRoundedPanelModern(knobX, toggleY + (2 * scale), knobSize, knobSize, palette.white, 0.99, knobSize / 2)
+
+    elseif item.type == "selector" and item.options then
+        local selectedIndex = item.selected or 1
+        local selectedOption = tostring(item.options[selectedIndex] or "")
+        local selectorText = "< " .. selectedOption .. " >"
+        local selectorWidth = Menu.GetTextWidthModern(selectorText, 12)
+        local selectorX = panelX + panelW - selectorWidth - (14 * scale)
+        Menu.DrawText(selectorX, textY, selectorText, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98)
+
+    elseif item.type == "action" then
+        Menu.DrawText(panelX + panelW - (20 * scale), textY, "›", 16, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.92)
+    end
+end
+
+local _Menu_OriginalDrawFooter_Premium = Menu.DrawFooter
+function Menu.DrawFooter()
+    local palette = Menu.GetThemePalette()
+    local scale = Menu.Scale or 1.0
+    local pos = Menu.GetScaledPosition()
+    local bannerHeight = Menu.Banner.enabled and (Menu.Banner.height * scale) or pos.headerHeight
+    local itemsCount = 0
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        if category and category.hasTabs and category.tabs then
+            local currentTab = category.tabs[Menu.CurrentTab]
+            if currentTab and currentTab.items then
+                itemsCount = math.min(Menu.ItemsPerPage, #currentTab.items)
+            end
+        end
+    else
+        local totalCategories = math.max(0, (Menu.Categories and #Menu.Categories or 1) - 1)
+        itemsCount = math.min(Menu.ItemsPerPage, totalCategories)
+    end
+
+    local x = pos.x
+    local footerY = pos.y + bannerHeight + pos.mainMenuHeight + pos.mainMenuSpacing + (itemsCount * pos.itemHeight) + pos.footerSpacing
+    local footerW = pos.width - 1
+    local footerH = pos.footerHeight
+    local accent = Menu.GetPremiumAccent()
+
+    Menu.DrawFramedPanelModern(x, footerY, footerW, footerH, palette.panel2, 0.97, palette.borderDim, 0.22, 12 * scale, 1)
+    Menu.DrawRoundedPanelModern(x + 1, footerY + 1, footerW - 2, math.max(8 * scale, footerH * 0.40), { r = 255, g = 255, b = 255 }, 0.025, 11 * scale)
+    Menu.DrawRoundedPanelModern(x + 12 * scale, footerY + 6 * scale, 104 * scale, footerH - 12 * scale, accent, 0.07, 9 * scale)
+
+    local leftText = "HEROS MENU  •  PREMIUM"
+    local sectionName = Menu.OpenedCategory and tostring((Menu.Categories and Menu.Categories[Menu.OpenedCategory] and Menu.Categories[Menu.OpenedCategory].name) or "Actions") or tostring((Menu.TopLevelTabs and Menu.TopLevelTabs[Menu.CurrentTopTab] and Menu.TopLevelTabs[Menu.CurrentTopTab].name) or "Menu")
+    local centerText = sectionName .. " • " .. tostring(Menu.CurrentTheme or "Purple")
+
+    local displayIndex, totalItems = 1, 1
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        if category and category.hasTabs and category.tabs then
+            local currentTab = category.tabs[Menu.CurrentTab]
+            if currentTab and currentTab.items then
+                displayIndex = Menu.CurrentItem
+                totalItems = #currentTab.items
+            end
+        end
+    else
+        displayIndex = math.max(1, (Menu.CurrentCategory or 2) - 1)
+        totalItems = math.max(1, (Menu.Categories and #Menu.Categories or 2) - 1)
+    end
+    local rightText = string.format("%d/%d", displayIndex, totalItems)
+
+    Menu.DrawText(x + (14 * scale), footerY + (footerH / 2) - (6 * scale), leftText, 11, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98)
+    local centerWidth = Menu.GetTextWidthModern(centerText, 11)
+    Menu.DrawText(x + (footerW / 2) - (centerWidth / 2), footerY + (footerH / 2) - (6 * scale), centerText, 11, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.96)
+    local rightWidth = Menu.GetTextWidthModern(rightText, 11)
+    Menu.DrawText(x + footerW - rightWidth - (14 * scale), footerY + (footerH / 2) - (6 * scale), rightText, 11, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.98)
+end
+
+
+return Menu.Colors.SelectedBg or { r = 148, g = 0, b = 211 }
 end
 
 function Menu.GetThemePalette()
