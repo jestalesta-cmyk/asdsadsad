@@ -2249,6 +2249,56 @@ end
 
 
 
+
+function Menu.InfiniteJumpBug(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    if NetworkRequestControlOfEntity then
+        for i = 1, 15 do
+            NetworkRequestControlOfEntity(ped)
+            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                break
+            end
+            Wait(0)
+        end
+    end
+
+    CreateThread(function()
+        for i = 1, 40 do
+            if DoesEntityExist(ped) then
+                if SetPedToRagdoll then
+                    SetPedToRagdoll(ped, 600, 600, 0, true, true, false)
+                end
+
+                if ApplyForceToEntity then
+                    ApplyForceToEntity(
+                        ped,
+                        1,
+                        math.random(-5,5),
+                        math.random(-5,5),
+                        150.0,
+                        0.0,0.0,0.0,
+                        0,
+                        true,true,true,false,true
+                    )
+                end
+
+                if SetEntityVelocity then
+                    SetEntityVelocity(ped, 0.0, 0.0, 25.0)
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+
 function Menu.CloneNPCAttackPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
@@ -2661,53 +2711,6 @@ function Menu.Render()
     return _Menu_OriginalRender_ParticleLoops()
 end
 
-
-
--- =========================
--- PANEL OPTIMIZER PATCH
--- =========================
-
-Menu.Optimization = Menu.Optimization or {
-    enabled = true,
-    lastTick = 0,
-    delay = 10
-}
-
-local _Menu_OriginalRender_Opt = Menu.Render
-function Menu.Render()
-    if not Menu.Optimization.enabled then
-        return _Menu_OriginalRender_Opt()
-    end
-
-    local now = GetGameTimer()
-    if now - (Menu.Optimization.lastTick or 0) < (Menu.Optimization.delay or 10) then
-        return
-    end
-
-    Menu.Optimization.lastTick = now
-    return _Menu_OriginalRender_Opt()
-end
-
--- Player list refresh optimization
-if Menu.PlayerList then
-    Menu.PlayerList.refreshInterval = 1500
-end
-
--- Particle loop optimizer
-local _Menu_OriginalRunParticleLoops = Menu.RunParticleLoops
-function Menu.RunParticleLoops()
-    if not Menu.ParticleLoops then return end
-
-    for loopName, cfg in pairs(Menu.ParticleLoops) do
-        if cfg and cfg.enabled and cfg.player then
-            if math.random(1, 3) == 1 then
-                pcall(function()
-                    Menu.PlayParticleOnPlayer(loopName, cfg.player)
-                end)
-            end
-        end
-    end
-end
 
 return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
 end
@@ -3721,54 +3724,7 @@ end
 
 function Menu.GetHeaderTitle()
     if Menu.Title and type(Menu.Title) == "string" and Menu.Title ~= "" then
-        
--- =========================
--- PANEL OPTIMIZER PATCH
--- =========================
-
-Menu.Optimization = Menu.Optimization or {
-    enabled = true,
-    lastTick = 0,
-    delay = 10
-}
-
-local _Menu_OriginalRender_Opt = Menu.Render
-function Menu.Render()
-    if not Menu.Optimization.enabled then
-        return _Menu_OriginalRender_Opt()
-    end
-
-    local now = GetGameTimer()
-    if now - (Menu.Optimization.lastTick or 0) < (Menu.Optimization.delay or 10) then
-        return
-    end
-
-    Menu.Optimization.lastTick = now
-    return _Menu_OriginalRender_Opt()
-end
-
--- Player list refresh optimization
-if Menu.PlayerList then
-    Menu.PlayerList.refreshInterval = 1500
-end
-
--- Particle loop optimizer
-local _Menu_OriginalRunParticleLoops = Menu.RunParticleLoops
-function Menu.RunParticleLoops()
-    if not Menu.ParticleLoops then return end
-
-    for loopName, cfg in pairs(Menu.ParticleLoops) do
-        if cfg and cfg.enabled and cfg.player then
-            if math.random(1, 3) == 1 then
-                pcall(function()
-                    Menu.PlayParticleOnPlayer(loopName, cfg.player)
-                end)
-            end
-        end
-    end
-end
-
-return Menu.Title
+        return Menu.Title
     end
 
     if Menu.TopLevelTabs and Menu.TopLevelTabs[Menu.CurrentTopTab] and Menu.TopLevelTabs[Menu.CurrentTopTab].name then
@@ -4828,54 +4784,7 @@ function Menu.ApplyStreamProofState(forceValue)
     end
 
     if Menu._streamProofLastApplied == desired then
-        
--- =========================
--- PANEL OPTIMIZER PATCH
--- =========================
-
-Menu.Optimization = Menu.Optimization or {
-    enabled = true,
-    lastTick = 0,
-    delay = 10
-}
-
-local _Menu_OriginalRender_Opt = Menu.Render
-function Menu.Render()
-    if not Menu.Optimization.enabled then
-        return _Menu_OriginalRender_Opt()
-    end
-
-    local now = GetGameTimer()
-    if now - (Menu.Optimization.lastTick or 0) < (Menu.Optimization.delay or 10) then
-        return
-    end
-
-    Menu.Optimization.lastTick = now
-    return _Menu_OriginalRender_Opt()
-end
-
--- Player list refresh optimization
-if Menu.PlayerList then
-    Menu.PlayerList.refreshInterval = 1500
-end
-
--- Particle loop optimizer
-local _Menu_OriginalRunParticleLoops = Menu.RunParticleLoops
-function Menu.RunParticleLoops()
-    if not Menu.ParticleLoops then return end
-
-    for loopName, cfg in pairs(Menu.ParticleLoops) do
-        if cfg and cfg.enabled and cfg.player then
-            if math.random(1, 3) == 1 then
-                pcall(function()
-                    Menu.PlayParticleOnPlayer(loopName, cfg.player)
-                end)
-            end
-        end
-    end
-end
-
-return Menu.StreamProofBackend, Menu.StreamProofStatus
+        return Menu.StreamProofBackend, Menu.StreamProofStatus
     end
 
     Menu._streamProofLastApplied = desired
@@ -5606,6 +5515,16 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
+                    name = "Clone NPC Attack"
+                },
+                {
+                    name = "Infinite Jump Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.InfiniteJumpBug(selectedPlayer)
+                    end
+                },
+                {
                     name = "Clone NPC Attack",
                     type = "action",
                     onClick = function()
@@ -5780,52 +5699,5 @@ end)
 
 Menu.ApplyTheme(Menu.CurrentTheme or "Purple")
 Menu.ApplyStreamProofState(Menu.StreamProof)
-
-
--- =========================
--- PANEL OPTIMIZER PATCH
--- =========================
-
-Menu.Optimization = Menu.Optimization or {
-    enabled = true,
-    lastTick = 0,
-    delay = 10
-}
-
-local _Menu_OriginalRender_Opt = Menu.Render
-function Menu.Render()
-    if not Menu.Optimization.enabled then
-        return _Menu_OriginalRender_Opt()
-    end
-
-    local now = GetGameTimer()
-    if now - (Menu.Optimization.lastTick or 0) < (Menu.Optimization.delay or 10) then
-        return
-    end
-
-    Menu.Optimization.lastTick = now
-    return _Menu_OriginalRender_Opt()
-end
-
--- Player list refresh optimization
-if Menu.PlayerList then
-    Menu.PlayerList.refreshInterval = 1500
-end
-
--- Particle loop optimizer
-local _Menu_OriginalRunParticleLoops = Menu.RunParticleLoops
-function Menu.RunParticleLoops()
-    if not Menu.ParticleLoops then return end
-
-    for loopName, cfg in pairs(Menu.ParticleLoops) do
-        if cfg and cfg.enabled and cfg.player then
-            if math.random(1, 3) == 1 then
-                pcall(function()
-                    Menu.PlayParticleOnPlayer(loopName, cfg.player)
-                end)
-            end
-        end
-    end
-end
 
 return Menu
