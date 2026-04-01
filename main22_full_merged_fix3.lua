@@ -5920,7 +5920,11 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
-                    name = "Cage Player"
+                    name = "Cage Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.CagePlayer(selectedPlayer)
+                    end
                 },
                 {
                     name = "Stuck In Air",
@@ -5955,12 +5959,6 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.CarSpinTrap(selectedPlayer)
-                    end
-                }
-,
-                    type = "action",
-                    onClick = function()
-                        Menu.CagePlayer(selectedPlayer)
                     end
                 },
                 {
