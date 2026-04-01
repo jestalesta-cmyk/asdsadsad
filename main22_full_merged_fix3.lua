@@ -2882,6 +2882,235 @@ function Menu.CarSpinTrap(playerData)
     end
 end
 
+
+
+-- ============================================
+-- Panel refresh layer
+-- ============================================
+Menu.Position.width = 430
+Menu.Position.itemHeight = 40
+Menu.Position.mainMenuHeight = 36
+Menu.Position.headerHeight = 108
+Menu.Position.footerHeight = 28
+Menu.Position.footerSpacing = 8
+Menu.Position.mainMenuSpacing = 7
+Menu.Position.footerRadius = 12
+Menu.Position.itemRadius = 12
+Menu.Position.headerRadius = 16
+
+local _Menu_BaseGetThemePalette_PanelRefresh = Menu.GetThemePalette
+function Menu.GetThemePalette()
+    local palette = _Menu_BaseGetThemePalette_PanelRefresh()
+    palette.panel = { r = 6, g = 10, b = 18 }
+    palette.panel2 = { r = 10, g = 15, b = 24 }
+    palette.panel3 = { r = 14, g = 20, b = 31 }
+    palette.panel4 = { r = 20, g = 27, b = 40 }
+    palette.panelGlass = { r = 26, g = 34, b = 50 }
+    palette.track = { r = 38, g = 48, b = 68 }
+    palette.borderDim = { r = 58, g = 70, b = 95 }
+    palette.text = { r = 245, g = 248, b = 255 }
+    palette.muted = { r = 162, g = 173, b = 193 }
+    palette.soft = { r = 112, g = 125, b = 148 }
+    return palette
+end
+
+local _Menu_BaseDrawHeader_PanelRefresh = Menu.DrawHeader
+function Menu.DrawHeader()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+    local x = bounds.x
+    local y = bounds.y
+    local width = bounds.width
+    local height = bounds.bannerHeight
+    local radius = 16 * scale
+
+    if Menu.DrawSoftShadow then
+        Menu.DrawSoftShadow(x + (4 * scale), y + (6 * scale), width - (8 * scale), height - (2 * scale), radius, 0.24, 10)
+    end
+
+    Menu.DrawFramedPanel(x, y, width, height, palette.panel2, 0.97, palette.border, 0.78, radius, 1)
+
+    if Menu.Banner.enabled and Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+        Susano.DrawImage(Menu.bannerTexture, x + 1, y + 1, width - 2, height - 2, 1, 1, 1, 0.88, 0)
+    else
+        for i = 0, 24 do
+            local mix = i / 24
+            local rowColor = Menu.MixColor(palette.accentDark, palette.accentSoft, mix * 0.9)
+            local rowY = y + (i * (height / 24))
+            Menu.DrawRoundedPanel(x + 1, rowY, width - 2, (height / 24) + 1, rowColor, 0.90, 0)
+        end
+    end
+
+    Menu.DrawRoundedPanel(x + 1, y + 1, width - 2, height - 2, { r = 0, g = 0, b = 0 }, 0.34, radius - 1)
+    Menu.DrawRoundedPanel(x + 12 * scale, y + 12 * scale, width * 0.38, 36 * scale, palette.accent, 0.07, 18 * scale)
+    Menu.DrawTopLine(x + 1, y + 1, width - 2, palette.accentGlow or palette.accent, 0.98)
+    Menu.DrawRoundedPanel(x + 1, y + height - (3 * scale), width - 2, 3 * scale, palette.accent, 0.66, 2 * scale)
+
+    local title = (Menu.GetHeaderTitle and Menu.GetHeaderTitle()) or "Menu"
+    local subtitle = (Menu.GetHeaderSubtitle and Menu.GetHeaderSubtitle()) or "Overlay interface"
+
+    Menu.DrawText(x + (16 * scale), y + (16 * scale), title, 23, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+    Menu.DrawText(x + (16 * scale), y + (42 * scale), subtitle, 11, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+
+    local pillY = y + (14 * scale)
+    if Menu.DrawPill then
+        Menu.DrawPill(x + width - (154 * scale), pillY, "Theme: " .. tostring(Menu.CurrentTheme or "Red"), 10, palette.panelGlass, palette.borderDim, palette.text, palette.accent)
+        Menu.DrawPill(x + width - (74 * scale), pillY, "Key: " .. tostring(Menu.SelectedKeyName or "Insert"), 10, palette.panelGlass, palette.borderDim, palette.text, palette.soft)
+    end
+end
+
+local _Menu_BaseDrawTopLevelTabs_PanelRefresh = Menu.DrawTopLevelTabs
+function Menu.DrawTopLevelTabs(x, startY, width, barHeight)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+
+    Menu.DrawFramedPanel(x + (6 * scale), startY + (2 * scale), width - (12 * scale), barHeight - (4 * scale), palette.panel2, 0.80, palette.borderDim, 0.18, 12 * scale, 1)
+
+    if not Menu.TopLevelTabs or #Menu.TopLevelTabs == 0 then
+        local title = "Menu"
+        local textWidth = Menu.GetTextWidth(title, 13)
+        Menu.DrawText(x + (width / 2) - (textWidth / 2), startY + (barHeight / 2) - (7 * scale), title, 13, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+        return
+    end
+
+    local gap = 6 * scale
+    local inset = 12 * scale
+    local count = #Menu.TopLevelTabs
+    local pillHeight = barHeight - (10 * scale)
+    local pillWidth = (width - (inset * 2) - (gap * (count - 1))) / count
+
+    for i, tab in ipairs(Menu.TopLevelTabs) do
+        local pillX = x + inset + ((i - 1) * (pillWidth + gap))
+        local pillY = startY + (barHeight / 2) - (pillHeight / 2)
+        local isSelected = (i == Menu.CurrentTopTab)
+
+        if isSelected and Menu.DrawSoftShadow then
+            Menu.DrawSoftShadow(pillX, pillY, pillWidth, pillHeight, 10 * scale, 0.16, 6)
+        end
+
+        Menu.DrawFramedPanel(pillX, pillY, pillWidth, pillHeight, isSelected and palette.panel3 or palette.panel, isSelected and 0.96 or 0.72, isSelected and palette.accent or palette.borderDim, isSelected and 0.88 or 0.14, pillHeight / 2, 1)
+
+        local label = tab.name or ""
+        local labelWidth = Menu.GetTextWidth(label, 12)
+        local labelColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(pillX + (pillWidth / 2) - (labelWidth / 2), pillY + (pillHeight / 2) - (6 * scale), label, 12, labelColor.r / 255.0, labelColor.g / 255.0, labelColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_BaseDrawTabs_PanelRefresh = Menu.DrawTabs
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    if not category or not category.hasTabs or not category.tabs then return end
+
+    local count = #category.tabs
+    if count <= 0 then return end
+
+    local inset = 6 * scale
+    local gap = 6 * scale
+    local usableWidth = width - (inset * 2) - (gap * (count - 1))
+    local tabWidth = usableWidth / count
+    local pillHeight = tabHeight - (4 * scale)
+
+    for i, tab in ipairs(category.tabs) do
+        local tabX = x + inset + ((i - 1) * (tabWidth + gap))
+        local tabY = startY + (2 * scale)
+        local isSelected = (i == Menu.CurrentTab)
+
+        if isSelected and Menu.DrawSoftShadow then
+            Menu.DrawSoftShadow(tabX, tabY, tabWidth, pillHeight, 10 * scale, 0.16, 6)
+        end
+
+        Menu.DrawFramedPanel(tabX, tabY, tabWidth, pillHeight, isSelected and palette.panel3 or palette.panel2, isSelected and 0.96 or 0.74, isSelected and palette.accent or palette.borderDim, isSelected and 0.90 or 0.16, 10 * scale, 1)
+
+        local label = tab.name or ""
+        local labelWidth = Menu.GetTextWidth(label, 12)
+        local textX = tabX + (tabWidth / 2) - (labelWidth / 2)
+        local textY = tabY + (pillHeight / 2) - (6 * scale)
+        local textColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(textX, textY, label, 12, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_BaseDrawItem_PanelRefresh = Menu.DrawItem
+function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+
+    if item.isSeparator then
+        local lineY = itemY + (itemHeight / 2)
+        local label = tostring(item.separatorText or "")
+        local labelWidth = Menu.GetTextWidth(label, 10)
+        local chipWidth = labelWidth + (22 * scale)
+        local chipX = x + (width / 2) - (chipWidth / 2)
+        local leftLineWidth = math.max(0, chipX - x - (16 * scale))
+        local rightLineX = chipX + chipWidth + (8 * scale)
+        local rightLineWidth = math.max(0, (x + width - (16 * scale)) - rightLineX)
+
+        if leftLineWidth > 0 then
+            Menu.DrawRoundedPanel(x + (16 * scale), lineY, leftLineWidth, 1, palette.borderDim, 0.34, 1)
+        end
+        if rightLineWidth > 0 then
+            Menu.DrawRoundedPanel(rightLineX, lineY, rightLineWidth, 1, palette.borderDim, 0.34, 1)
+        end
+
+        Menu.DrawFramedPanel(chipX, itemY + (itemHeight / 2) - (9 * scale), chipWidth, 18 * scale, palette.panel2, 0.88, palette.borderDim, 0.16, 9 * scale, 1)
+        Menu.DrawText(chipX + (11 * scale), itemY + (itemHeight / 2) - (5 * scale), label, 10, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+        return
+    end
+
+    local panelX = x + (8 * scale)
+    local panelY = itemY + (3 * scale)
+    local panelW = width - (16 * scale)
+    local panelH = itemHeight - (6 * scale)
+    local radius = 11 * scale
+
+    if isSelected and Menu.DrawSoftShadow then
+        Menu.DrawSoftShadow(panelX, panelY, panelW, panelH, radius, 0.17, 6)
+    end
+
+    Menu.DrawFramedPanel(panelX, panelY, panelW, panelH, isSelected and palette.panel3 or palette.panel2, isSelected and 0.96 or 0.78, isSelected and palette.accent or palette.borderDim, isSelected and 0.82 or 0.12, radius, 1)
+
+    if isSelected then
+        Menu.DrawRoundedPanel(panelX + (1 * scale), panelY + (1 * scale), 4 * scale, panelH - (2 * scale), palette.accent, 1.0, 4 * scale)
+    end
+
+    local textColor = isSelected and palette.text or palette.text
+    Menu.DrawText(panelX + (12 * scale), panelY + (panelH / 2) - (7 * scale), item.name or "", 13, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+
+    if item.type == "toggle" then
+        local toggleWidth = 38 * scale
+        local toggleHeight = 18 * scale
+        local toggleX = panelX + panelW - toggleWidth - (10 * scale)
+        local toggleY = panelY + (panelH / 2) - (toggleHeight / 2)
+        Menu.DrawToggleSwitch(toggleX, toggleY, item.value == true)
+    elseif item.type == "selector" and item.options then
+        local selectedIndex = item.selected or 1
+        local selectedOption = tostring(item.options[selectedIndex] or "")
+        local fullText = "< " .. selectedOption .. " >"
+        local selectorWidth = Menu.GetTextWidth(fullText, 12)
+        local selectorX = panelX + panelW - selectorWidth - (12 * scale)
+        Menu.DrawText(selectorX, panelY + (panelH / 2) - (6 * scale), fullText, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98)
+    elseif item.type == "action" then
+        local chevron = "›"
+        local cw = Menu.GetTextWidth(chevron, 16)
+        Menu.DrawText(panelX + panelW - cw - (12 * scale), panelY + (panelH / 2) - (8 * scale), chevron, 16, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.95)
+    else
+        _Menu_BaseDrawItem_PanelRefresh(x, itemY, width, itemHeight, item, isSelected)
+    end
+end
+
+local _Menu_BaseDrawFooter_PanelRefresh = Menu.DrawFooter
+function Menu.DrawFooter()
+    _Menu_BaseDrawFooter_PanelRefresh()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+
+    Menu.DrawRoundedPanel(bounds.x + (10 * scale), bounds.footerY + (4 * scale), 94 * scale, bounds.footerHeight - (8 * scale), palette.accent, 0.05, 10 * scale)
+end
+
 return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
 end
 
@@ -3991,6 +4220,235 @@ function Menu.CarSpinTrap(playerData)
         if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
         Wait(100)
     end
+end
+
+
+
+-- ============================================
+-- Panel refresh layer
+-- ============================================
+Menu.Position.width = 430
+Menu.Position.itemHeight = 40
+Menu.Position.mainMenuHeight = 36
+Menu.Position.headerHeight = 108
+Menu.Position.footerHeight = 28
+Menu.Position.footerSpacing = 8
+Menu.Position.mainMenuSpacing = 7
+Menu.Position.footerRadius = 12
+Menu.Position.itemRadius = 12
+Menu.Position.headerRadius = 16
+
+local _Menu_BaseGetThemePalette_PanelRefresh = Menu.GetThemePalette
+function Menu.GetThemePalette()
+    local palette = _Menu_BaseGetThemePalette_PanelRefresh()
+    palette.panel = { r = 6, g = 10, b = 18 }
+    palette.panel2 = { r = 10, g = 15, b = 24 }
+    palette.panel3 = { r = 14, g = 20, b = 31 }
+    palette.panel4 = { r = 20, g = 27, b = 40 }
+    palette.panelGlass = { r = 26, g = 34, b = 50 }
+    palette.track = { r = 38, g = 48, b = 68 }
+    palette.borderDim = { r = 58, g = 70, b = 95 }
+    palette.text = { r = 245, g = 248, b = 255 }
+    palette.muted = { r = 162, g = 173, b = 193 }
+    palette.soft = { r = 112, g = 125, b = 148 }
+    return palette
+end
+
+local _Menu_BaseDrawHeader_PanelRefresh = Menu.DrawHeader
+function Menu.DrawHeader()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+    local x = bounds.x
+    local y = bounds.y
+    local width = bounds.width
+    local height = bounds.bannerHeight
+    local radius = 16 * scale
+
+    if Menu.DrawSoftShadow then
+        Menu.DrawSoftShadow(x + (4 * scale), y + (6 * scale), width - (8 * scale), height - (2 * scale), radius, 0.24, 10)
+    end
+
+    Menu.DrawFramedPanel(x, y, width, height, palette.panel2, 0.97, palette.border, 0.78, radius, 1)
+
+    if Menu.Banner.enabled and Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+        Susano.DrawImage(Menu.bannerTexture, x + 1, y + 1, width - 2, height - 2, 1, 1, 1, 0.88, 0)
+    else
+        for i = 0, 24 do
+            local mix = i / 24
+            local rowColor = Menu.MixColor(palette.accentDark, palette.accentSoft, mix * 0.9)
+            local rowY = y + (i * (height / 24))
+            Menu.DrawRoundedPanel(x + 1, rowY, width - 2, (height / 24) + 1, rowColor, 0.90, 0)
+        end
+    end
+
+    Menu.DrawRoundedPanel(x + 1, y + 1, width - 2, height - 2, { r = 0, g = 0, b = 0 }, 0.34, radius - 1)
+    Menu.DrawRoundedPanel(x + 12 * scale, y + 12 * scale, width * 0.38, 36 * scale, palette.accent, 0.07, 18 * scale)
+    Menu.DrawTopLine(x + 1, y + 1, width - 2, palette.accentGlow or palette.accent, 0.98)
+    Menu.DrawRoundedPanel(x + 1, y + height - (3 * scale), width - 2, 3 * scale, palette.accent, 0.66, 2 * scale)
+
+    local title = (Menu.GetHeaderTitle and Menu.GetHeaderTitle()) or "Menu"
+    local subtitle = (Menu.GetHeaderSubtitle and Menu.GetHeaderSubtitle()) or "Overlay interface"
+
+    Menu.DrawText(x + (16 * scale), y + (16 * scale), title, 23, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+    Menu.DrawText(x + (16 * scale), y + (42 * scale), subtitle, 11, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+
+    local pillY = y + (14 * scale)
+    if Menu.DrawPill then
+        Menu.DrawPill(x + width - (154 * scale), pillY, "Theme: " .. tostring(Menu.CurrentTheme or "Red"), 10, palette.panelGlass, palette.borderDim, palette.text, palette.accent)
+        Menu.DrawPill(x + width - (74 * scale), pillY, "Key: " .. tostring(Menu.SelectedKeyName or "Insert"), 10, palette.panelGlass, palette.borderDim, palette.text, palette.soft)
+    end
+end
+
+local _Menu_BaseDrawTopLevelTabs_PanelRefresh = Menu.DrawTopLevelTabs
+function Menu.DrawTopLevelTabs(x, startY, width, barHeight)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+
+    Menu.DrawFramedPanel(x + (6 * scale), startY + (2 * scale), width - (12 * scale), barHeight - (4 * scale), palette.panel2, 0.80, palette.borderDim, 0.18, 12 * scale, 1)
+
+    if not Menu.TopLevelTabs or #Menu.TopLevelTabs == 0 then
+        local title = "Menu"
+        local textWidth = Menu.GetTextWidth(title, 13)
+        Menu.DrawText(x + (width / 2) - (textWidth / 2), startY + (barHeight / 2) - (7 * scale), title, 13, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+        return
+    end
+
+    local gap = 6 * scale
+    local inset = 12 * scale
+    local count = #Menu.TopLevelTabs
+    local pillHeight = barHeight - (10 * scale)
+    local pillWidth = (width - (inset * 2) - (gap * (count - 1))) / count
+
+    for i, tab in ipairs(Menu.TopLevelTabs) do
+        local pillX = x + inset + ((i - 1) * (pillWidth + gap))
+        local pillY = startY + (barHeight / 2) - (pillHeight / 2)
+        local isSelected = (i == Menu.CurrentTopTab)
+
+        if isSelected and Menu.DrawSoftShadow then
+            Menu.DrawSoftShadow(pillX, pillY, pillWidth, pillHeight, 10 * scale, 0.16, 6)
+        end
+
+        Menu.DrawFramedPanel(pillX, pillY, pillWidth, pillHeight, isSelected and palette.panel3 or palette.panel, isSelected and 0.96 or 0.72, isSelected and palette.accent or palette.borderDim, isSelected and 0.88 or 0.14, pillHeight / 2, 1)
+
+        local label = tab.name or ""
+        local labelWidth = Menu.GetTextWidth(label, 12)
+        local labelColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(pillX + (pillWidth / 2) - (labelWidth / 2), pillY + (pillHeight / 2) - (6 * scale), label, 12, labelColor.r / 255.0, labelColor.g / 255.0, labelColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_BaseDrawTabs_PanelRefresh = Menu.DrawTabs
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    if not category or not category.hasTabs or not category.tabs then return end
+
+    local count = #category.tabs
+    if count <= 0 then return end
+
+    local inset = 6 * scale
+    local gap = 6 * scale
+    local usableWidth = width - (inset * 2) - (gap * (count - 1))
+    local tabWidth = usableWidth / count
+    local pillHeight = tabHeight - (4 * scale)
+
+    for i, tab in ipairs(category.tabs) do
+        local tabX = x + inset + ((i - 1) * (tabWidth + gap))
+        local tabY = startY + (2 * scale)
+        local isSelected = (i == Menu.CurrentTab)
+
+        if isSelected and Menu.DrawSoftShadow then
+            Menu.DrawSoftShadow(tabX, tabY, tabWidth, pillHeight, 10 * scale, 0.16, 6)
+        end
+
+        Menu.DrawFramedPanel(tabX, tabY, tabWidth, pillHeight, isSelected and palette.panel3 or palette.panel2, isSelected and 0.96 or 0.74, isSelected and palette.accent or palette.borderDim, isSelected and 0.90 or 0.16, 10 * scale, 1)
+
+        local label = tab.name or ""
+        local labelWidth = Menu.GetTextWidth(label, 12)
+        local textX = tabX + (tabWidth / 2) - (labelWidth / 2)
+        local textY = tabY + (pillHeight / 2) - (6 * scale)
+        local textColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(textX, textY, label, 12, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_BaseDrawItem_PanelRefresh = Menu.DrawItem
+function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+
+    if item.isSeparator then
+        local lineY = itemY + (itemHeight / 2)
+        local label = tostring(item.separatorText or "")
+        local labelWidth = Menu.GetTextWidth(label, 10)
+        local chipWidth = labelWidth + (22 * scale)
+        local chipX = x + (width / 2) - (chipWidth / 2)
+        local leftLineWidth = math.max(0, chipX - x - (16 * scale))
+        local rightLineX = chipX + chipWidth + (8 * scale)
+        local rightLineWidth = math.max(0, (x + width - (16 * scale)) - rightLineX)
+
+        if leftLineWidth > 0 then
+            Menu.DrawRoundedPanel(x + (16 * scale), lineY, leftLineWidth, 1, palette.borderDim, 0.34, 1)
+        end
+        if rightLineWidth > 0 then
+            Menu.DrawRoundedPanel(rightLineX, lineY, rightLineWidth, 1, palette.borderDim, 0.34, 1)
+        end
+
+        Menu.DrawFramedPanel(chipX, itemY + (itemHeight / 2) - (9 * scale), chipWidth, 18 * scale, palette.panel2, 0.88, palette.borderDim, 0.16, 9 * scale, 1)
+        Menu.DrawText(chipX + (11 * scale), itemY + (itemHeight / 2) - (5 * scale), label, 10, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+        return
+    end
+
+    local panelX = x + (8 * scale)
+    local panelY = itemY + (3 * scale)
+    local panelW = width - (16 * scale)
+    local panelH = itemHeight - (6 * scale)
+    local radius = 11 * scale
+
+    if isSelected and Menu.DrawSoftShadow then
+        Menu.DrawSoftShadow(panelX, panelY, panelW, panelH, radius, 0.17, 6)
+    end
+
+    Menu.DrawFramedPanel(panelX, panelY, panelW, panelH, isSelected and palette.panel3 or palette.panel2, isSelected and 0.96 or 0.78, isSelected and palette.accent or palette.borderDim, isSelected and 0.82 or 0.12, radius, 1)
+
+    if isSelected then
+        Menu.DrawRoundedPanel(panelX + (1 * scale), panelY + (1 * scale), 4 * scale, panelH - (2 * scale), palette.accent, 1.0, 4 * scale)
+    end
+
+    local textColor = isSelected and palette.text or palette.text
+    Menu.DrawText(panelX + (12 * scale), panelY + (panelH / 2) - (7 * scale), item.name or "", 13, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+
+    if item.type == "toggle" then
+        local toggleWidth = 38 * scale
+        local toggleHeight = 18 * scale
+        local toggleX = panelX + panelW - toggleWidth - (10 * scale)
+        local toggleY = panelY + (panelH / 2) - (toggleHeight / 2)
+        Menu.DrawToggleSwitch(toggleX, toggleY, item.value == true)
+    elseif item.type == "selector" and item.options then
+        local selectedIndex = item.selected or 1
+        local selectedOption = tostring(item.options[selectedIndex] or "")
+        local fullText = "< " .. selectedOption .. " >"
+        local selectorWidth = Menu.GetTextWidth(fullText, 12)
+        local selectorX = panelX + panelW - selectorWidth - (12 * scale)
+        Menu.DrawText(selectorX, panelY + (panelH / 2) - (6 * scale), fullText, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98)
+    elseif item.type == "action" then
+        local chevron = "›"
+        local cw = Menu.GetTextWidth(chevron, 16)
+        Menu.DrawText(panelX + panelW - cw - (12 * scale), panelY + (panelH / 2) - (8 * scale), chevron, 16, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.95)
+    else
+        _Menu_BaseDrawItem_PanelRefresh(x, itemY, width, itemHeight, item, isSelected)
+    end
+end
+
+local _Menu_BaseDrawFooter_PanelRefresh = Menu.DrawFooter
+function Menu.DrawFooter()
+    _Menu_BaseDrawFooter_PanelRefresh()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+
+    Menu.DrawRoundedPanel(bounds.x + (10 * scale), bounds.footerY + (4 * scale), 94 * scale, bounds.footerHeight - (8 * scale), palette.accent, 0.05, 10 * scale)
 end
 
 return Menu.Title
@@ -5152,6 +5610,235 @@ function Menu.CarSpinTrap(playerData)
     end
 end
 
+
+
+-- ============================================
+-- Panel refresh layer
+-- ============================================
+Menu.Position.width = 430
+Menu.Position.itemHeight = 40
+Menu.Position.mainMenuHeight = 36
+Menu.Position.headerHeight = 108
+Menu.Position.footerHeight = 28
+Menu.Position.footerSpacing = 8
+Menu.Position.mainMenuSpacing = 7
+Menu.Position.footerRadius = 12
+Menu.Position.itemRadius = 12
+Menu.Position.headerRadius = 16
+
+local _Menu_BaseGetThemePalette_PanelRefresh = Menu.GetThemePalette
+function Menu.GetThemePalette()
+    local palette = _Menu_BaseGetThemePalette_PanelRefresh()
+    palette.panel = { r = 6, g = 10, b = 18 }
+    palette.panel2 = { r = 10, g = 15, b = 24 }
+    palette.panel3 = { r = 14, g = 20, b = 31 }
+    palette.panel4 = { r = 20, g = 27, b = 40 }
+    palette.panelGlass = { r = 26, g = 34, b = 50 }
+    palette.track = { r = 38, g = 48, b = 68 }
+    palette.borderDim = { r = 58, g = 70, b = 95 }
+    palette.text = { r = 245, g = 248, b = 255 }
+    palette.muted = { r = 162, g = 173, b = 193 }
+    palette.soft = { r = 112, g = 125, b = 148 }
+    return palette
+end
+
+local _Menu_BaseDrawHeader_PanelRefresh = Menu.DrawHeader
+function Menu.DrawHeader()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+    local x = bounds.x
+    local y = bounds.y
+    local width = bounds.width
+    local height = bounds.bannerHeight
+    local radius = 16 * scale
+
+    if Menu.DrawSoftShadow then
+        Menu.DrawSoftShadow(x + (4 * scale), y + (6 * scale), width - (8 * scale), height - (2 * scale), radius, 0.24, 10)
+    end
+
+    Menu.DrawFramedPanel(x, y, width, height, palette.panel2, 0.97, palette.border, 0.78, radius, 1)
+
+    if Menu.Banner.enabled and Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+        Susano.DrawImage(Menu.bannerTexture, x + 1, y + 1, width - 2, height - 2, 1, 1, 1, 0.88, 0)
+    else
+        for i = 0, 24 do
+            local mix = i / 24
+            local rowColor = Menu.MixColor(palette.accentDark, palette.accentSoft, mix * 0.9)
+            local rowY = y + (i * (height / 24))
+            Menu.DrawRoundedPanel(x + 1, rowY, width - 2, (height / 24) + 1, rowColor, 0.90, 0)
+        end
+    end
+
+    Menu.DrawRoundedPanel(x + 1, y + 1, width - 2, height - 2, { r = 0, g = 0, b = 0 }, 0.34, radius - 1)
+    Menu.DrawRoundedPanel(x + 12 * scale, y + 12 * scale, width * 0.38, 36 * scale, palette.accent, 0.07, 18 * scale)
+    Menu.DrawTopLine(x + 1, y + 1, width - 2, palette.accentGlow or palette.accent, 0.98)
+    Menu.DrawRoundedPanel(x + 1, y + height - (3 * scale), width - 2, 3 * scale, palette.accent, 0.66, 2 * scale)
+
+    local title = (Menu.GetHeaderTitle and Menu.GetHeaderTitle()) or "Menu"
+    local subtitle = (Menu.GetHeaderSubtitle and Menu.GetHeaderSubtitle()) or "Overlay interface"
+
+    Menu.DrawText(x + (16 * scale), y + (16 * scale), title, 23, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+    Menu.DrawText(x + (16 * scale), y + (42 * scale), subtitle, 11, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+
+    local pillY = y + (14 * scale)
+    if Menu.DrawPill then
+        Menu.DrawPill(x + width - (154 * scale), pillY, "Theme: " .. tostring(Menu.CurrentTheme or "Red"), 10, palette.panelGlass, palette.borderDim, palette.text, palette.accent)
+        Menu.DrawPill(x + width - (74 * scale), pillY, "Key: " .. tostring(Menu.SelectedKeyName or "Insert"), 10, palette.panelGlass, palette.borderDim, palette.text, palette.soft)
+    end
+end
+
+local _Menu_BaseDrawTopLevelTabs_PanelRefresh = Menu.DrawTopLevelTabs
+function Menu.DrawTopLevelTabs(x, startY, width, barHeight)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+
+    Menu.DrawFramedPanel(x + (6 * scale), startY + (2 * scale), width - (12 * scale), barHeight - (4 * scale), palette.panel2, 0.80, palette.borderDim, 0.18, 12 * scale, 1)
+
+    if not Menu.TopLevelTabs or #Menu.TopLevelTabs == 0 then
+        local title = "Menu"
+        local textWidth = Menu.GetTextWidth(title, 13)
+        Menu.DrawText(x + (width / 2) - (textWidth / 2), startY + (barHeight / 2) - (7 * scale), title, 13, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+        return
+    end
+
+    local gap = 6 * scale
+    local inset = 12 * scale
+    local count = #Menu.TopLevelTabs
+    local pillHeight = barHeight - (10 * scale)
+    local pillWidth = (width - (inset * 2) - (gap * (count - 1))) / count
+
+    for i, tab in ipairs(Menu.TopLevelTabs) do
+        local pillX = x + inset + ((i - 1) * (pillWidth + gap))
+        local pillY = startY + (barHeight / 2) - (pillHeight / 2)
+        local isSelected = (i == Menu.CurrentTopTab)
+
+        if isSelected and Menu.DrawSoftShadow then
+            Menu.DrawSoftShadow(pillX, pillY, pillWidth, pillHeight, 10 * scale, 0.16, 6)
+        end
+
+        Menu.DrawFramedPanel(pillX, pillY, pillWidth, pillHeight, isSelected and palette.panel3 or palette.panel, isSelected and 0.96 or 0.72, isSelected and palette.accent or palette.borderDim, isSelected and 0.88 or 0.14, pillHeight / 2, 1)
+
+        local label = tab.name or ""
+        local labelWidth = Menu.GetTextWidth(label, 12)
+        local labelColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(pillX + (pillWidth / 2) - (labelWidth / 2), pillY + (pillHeight / 2) - (6 * scale), label, 12, labelColor.r / 255.0, labelColor.g / 255.0, labelColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_BaseDrawTabs_PanelRefresh = Menu.DrawTabs
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    if not category or not category.hasTabs or not category.tabs then return end
+
+    local count = #category.tabs
+    if count <= 0 then return end
+
+    local inset = 6 * scale
+    local gap = 6 * scale
+    local usableWidth = width - (inset * 2) - (gap * (count - 1))
+    local tabWidth = usableWidth / count
+    local pillHeight = tabHeight - (4 * scale)
+
+    for i, tab in ipairs(category.tabs) do
+        local tabX = x + inset + ((i - 1) * (tabWidth + gap))
+        local tabY = startY + (2 * scale)
+        local isSelected = (i == Menu.CurrentTab)
+
+        if isSelected and Menu.DrawSoftShadow then
+            Menu.DrawSoftShadow(tabX, tabY, tabWidth, pillHeight, 10 * scale, 0.16, 6)
+        end
+
+        Menu.DrawFramedPanel(tabX, tabY, tabWidth, pillHeight, isSelected and palette.panel3 or palette.panel2, isSelected and 0.96 or 0.74, isSelected and palette.accent or palette.borderDim, isSelected and 0.90 or 0.16, 10 * scale, 1)
+
+        local label = tab.name or ""
+        local labelWidth = Menu.GetTextWidth(label, 12)
+        local textX = tabX + (tabWidth / 2) - (labelWidth / 2)
+        local textY = tabY + (pillHeight / 2) - (6 * scale)
+        local textColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(textX, textY, label, 12, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_BaseDrawItem_PanelRefresh = Menu.DrawItem
+function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+
+    if item.isSeparator then
+        local lineY = itemY + (itemHeight / 2)
+        local label = tostring(item.separatorText or "")
+        local labelWidth = Menu.GetTextWidth(label, 10)
+        local chipWidth = labelWidth + (22 * scale)
+        local chipX = x + (width / 2) - (chipWidth / 2)
+        local leftLineWidth = math.max(0, chipX - x - (16 * scale))
+        local rightLineX = chipX + chipWidth + (8 * scale)
+        local rightLineWidth = math.max(0, (x + width - (16 * scale)) - rightLineX)
+
+        if leftLineWidth > 0 then
+            Menu.DrawRoundedPanel(x + (16 * scale), lineY, leftLineWidth, 1, palette.borderDim, 0.34, 1)
+        end
+        if rightLineWidth > 0 then
+            Menu.DrawRoundedPanel(rightLineX, lineY, rightLineWidth, 1, palette.borderDim, 0.34, 1)
+        end
+
+        Menu.DrawFramedPanel(chipX, itemY + (itemHeight / 2) - (9 * scale), chipWidth, 18 * scale, palette.panel2, 0.88, palette.borderDim, 0.16, 9 * scale, 1)
+        Menu.DrawText(chipX + (11 * scale), itemY + (itemHeight / 2) - (5 * scale), label, 10, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+        return
+    end
+
+    local panelX = x + (8 * scale)
+    local panelY = itemY + (3 * scale)
+    local panelW = width - (16 * scale)
+    local panelH = itemHeight - (6 * scale)
+    local radius = 11 * scale
+
+    if isSelected and Menu.DrawSoftShadow then
+        Menu.DrawSoftShadow(panelX, panelY, panelW, panelH, radius, 0.17, 6)
+    end
+
+    Menu.DrawFramedPanel(panelX, panelY, panelW, panelH, isSelected and palette.panel3 or palette.panel2, isSelected and 0.96 or 0.78, isSelected and palette.accent or palette.borderDim, isSelected and 0.82 or 0.12, radius, 1)
+
+    if isSelected then
+        Menu.DrawRoundedPanel(panelX + (1 * scale), panelY + (1 * scale), 4 * scale, panelH - (2 * scale), palette.accent, 1.0, 4 * scale)
+    end
+
+    local textColor = isSelected and palette.text or palette.text
+    Menu.DrawText(panelX + (12 * scale), panelY + (panelH / 2) - (7 * scale), item.name or "", 13, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+
+    if item.type == "toggle" then
+        local toggleWidth = 38 * scale
+        local toggleHeight = 18 * scale
+        local toggleX = panelX + panelW - toggleWidth - (10 * scale)
+        local toggleY = panelY + (panelH / 2) - (toggleHeight / 2)
+        Menu.DrawToggleSwitch(toggleX, toggleY, item.value == true)
+    elseif item.type == "selector" and item.options then
+        local selectedIndex = item.selected or 1
+        local selectedOption = tostring(item.options[selectedIndex] or "")
+        local fullText = "< " .. selectedOption .. " >"
+        local selectorWidth = Menu.GetTextWidth(fullText, 12)
+        local selectorX = panelX + panelW - selectorWidth - (12 * scale)
+        Menu.DrawText(selectorX, panelY + (panelH / 2) - (6 * scale), fullText, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98)
+    elseif item.type == "action" then
+        local chevron = "›"
+        local cw = Menu.GetTextWidth(chevron, 16)
+        Menu.DrawText(panelX + panelW - cw - (12 * scale), panelY + (panelH / 2) - (8 * scale), chevron, 16, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.95)
+    else
+        _Menu_BaseDrawItem_PanelRefresh(x, itemY, width, itemHeight, item, isSelected)
+    end
+end
+
+local _Menu_BaseDrawFooter_PanelRefresh = Menu.DrawFooter
+function Menu.DrawFooter()
+    _Menu_BaseDrawFooter_PanelRefresh()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+
+    Menu.DrawRoundedPanel(bounds.x + (10 * scale), bounds.footerY + (4 * scale), 94 * scale, bounds.footerHeight - (8 * scale), palette.accent, 0.05, 10 * scale)
+end
+
 return Menu.StreamProofBackend, Menu.StreamProofStatus
     end
 
@@ -6193,6 +6880,235 @@ function Menu.CarSpinTrap(playerData)
         if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
         Wait(100)
     end
+end
+
+
+
+-- ============================================
+-- Panel refresh layer
+-- ============================================
+Menu.Position.width = 430
+Menu.Position.itemHeight = 40
+Menu.Position.mainMenuHeight = 36
+Menu.Position.headerHeight = 108
+Menu.Position.footerHeight = 28
+Menu.Position.footerSpacing = 8
+Menu.Position.mainMenuSpacing = 7
+Menu.Position.footerRadius = 12
+Menu.Position.itemRadius = 12
+Menu.Position.headerRadius = 16
+
+local _Menu_BaseGetThemePalette_PanelRefresh = Menu.GetThemePalette
+function Menu.GetThemePalette()
+    local palette = _Menu_BaseGetThemePalette_PanelRefresh()
+    palette.panel = { r = 6, g = 10, b = 18 }
+    palette.panel2 = { r = 10, g = 15, b = 24 }
+    palette.panel3 = { r = 14, g = 20, b = 31 }
+    palette.panel4 = { r = 20, g = 27, b = 40 }
+    palette.panelGlass = { r = 26, g = 34, b = 50 }
+    palette.track = { r = 38, g = 48, b = 68 }
+    palette.borderDim = { r = 58, g = 70, b = 95 }
+    palette.text = { r = 245, g = 248, b = 255 }
+    palette.muted = { r = 162, g = 173, b = 193 }
+    palette.soft = { r = 112, g = 125, b = 148 }
+    return palette
+end
+
+local _Menu_BaseDrawHeader_PanelRefresh = Menu.DrawHeader
+function Menu.DrawHeader()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+    local x = bounds.x
+    local y = bounds.y
+    local width = bounds.width
+    local height = bounds.bannerHeight
+    local radius = 16 * scale
+
+    if Menu.DrawSoftShadow then
+        Menu.DrawSoftShadow(x + (4 * scale), y + (6 * scale), width - (8 * scale), height - (2 * scale), radius, 0.24, 10)
+    end
+
+    Menu.DrawFramedPanel(x, y, width, height, palette.panel2, 0.97, palette.border, 0.78, radius, 1)
+
+    if Menu.Banner.enabled and Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+        Susano.DrawImage(Menu.bannerTexture, x + 1, y + 1, width - 2, height - 2, 1, 1, 1, 0.88, 0)
+    else
+        for i = 0, 24 do
+            local mix = i / 24
+            local rowColor = Menu.MixColor(palette.accentDark, palette.accentSoft, mix * 0.9)
+            local rowY = y + (i * (height / 24))
+            Menu.DrawRoundedPanel(x + 1, rowY, width - 2, (height / 24) + 1, rowColor, 0.90, 0)
+        end
+    end
+
+    Menu.DrawRoundedPanel(x + 1, y + 1, width - 2, height - 2, { r = 0, g = 0, b = 0 }, 0.34, radius - 1)
+    Menu.DrawRoundedPanel(x + 12 * scale, y + 12 * scale, width * 0.38, 36 * scale, palette.accent, 0.07, 18 * scale)
+    Menu.DrawTopLine(x + 1, y + 1, width - 2, palette.accentGlow or palette.accent, 0.98)
+    Menu.DrawRoundedPanel(x + 1, y + height - (3 * scale), width - 2, 3 * scale, palette.accent, 0.66, 2 * scale)
+
+    local title = (Menu.GetHeaderTitle and Menu.GetHeaderTitle()) or "Menu"
+    local subtitle = (Menu.GetHeaderSubtitle and Menu.GetHeaderSubtitle()) or "Overlay interface"
+
+    Menu.DrawText(x + (16 * scale), y + (16 * scale), title, 23, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+    Menu.DrawText(x + (16 * scale), y + (42 * scale), subtitle, 11, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+
+    local pillY = y + (14 * scale)
+    if Menu.DrawPill then
+        Menu.DrawPill(x + width - (154 * scale), pillY, "Theme: " .. tostring(Menu.CurrentTheme or "Red"), 10, palette.panelGlass, palette.borderDim, palette.text, palette.accent)
+        Menu.DrawPill(x + width - (74 * scale), pillY, "Key: " .. tostring(Menu.SelectedKeyName or "Insert"), 10, palette.panelGlass, palette.borderDim, palette.text, palette.soft)
+    end
+end
+
+local _Menu_BaseDrawTopLevelTabs_PanelRefresh = Menu.DrawTopLevelTabs
+function Menu.DrawTopLevelTabs(x, startY, width, barHeight)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+
+    Menu.DrawFramedPanel(x + (6 * scale), startY + (2 * scale), width - (12 * scale), barHeight - (4 * scale), palette.panel2, 0.80, palette.borderDim, 0.18, 12 * scale, 1)
+
+    if not Menu.TopLevelTabs or #Menu.TopLevelTabs == 0 then
+        local title = "Menu"
+        local textWidth = Menu.GetTextWidth(title, 13)
+        Menu.DrawText(x + (width / 2) - (textWidth / 2), startY + (barHeight / 2) - (7 * scale), title, 13, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+        return
+    end
+
+    local gap = 6 * scale
+    local inset = 12 * scale
+    local count = #Menu.TopLevelTabs
+    local pillHeight = barHeight - (10 * scale)
+    local pillWidth = (width - (inset * 2) - (gap * (count - 1))) / count
+
+    for i, tab in ipairs(Menu.TopLevelTabs) do
+        local pillX = x + inset + ((i - 1) * (pillWidth + gap))
+        local pillY = startY + (barHeight / 2) - (pillHeight / 2)
+        local isSelected = (i == Menu.CurrentTopTab)
+
+        if isSelected and Menu.DrawSoftShadow then
+            Menu.DrawSoftShadow(pillX, pillY, pillWidth, pillHeight, 10 * scale, 0.16, 6)
+        end
+
+        Menu.DrawFramedPanel(pillX, pillY, pillWidth, pillHeight, isSelected and palette.panel3 or palette.panel, isSelected and 0.96 or 0.72, isSelected and palette.accent or palette.borderDim, isSelected and 0.88 or 0.14, pillHeight / 2, 1)
+
+        local label = tab.name or ""
+        local labelWidth = Menu.GetTextWidth(label, 12)
+        local labelColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(pillX + (pillWidth / 2) - (labelWidth / 2), pillY + (pillHeight / 2) - (6 * scale), label, 12, labelColor.r / 255.0, labelColor.g / 255.0, labelColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_BaseDrawTabs_PanelRefresh = Menu.DrawTabs
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    if not category or not category.hasTabs or not category.tabs then return end
+
+    local count = #category.tabs
+    if count <= 0 then return end
+
+    local inset = 6 * scale
+    local gap = 6 * scale
+    local usableWidth = width - (inset * 2) - (gap * (count - 1))
+    local tabWidth = usableWidth / count
+    local pillHeight = tabHeight - (4 * scale)
+
+    for i, tab in ipairs(category.tabs) do
+        local tabX = x + inset + ((i - 1) * (tabWidth + gap))
+        local tabY = startY + (2 * scale)
+        local isSelected = (i == Menu.CurrentTab)
+
+        if isSelected and Menu.DrawSoftShadow then
+            Menu.DrawSoftShadow(tabX, tabY, tabWidth, pillHeight, 10 * scale, 0.16, 6)
+        end
+
+        Menu.DrawFramedPanel(tabX, tabY, tabWidth, pillHeight, isSelected and palette.panel3 or palette.panel2, isSelected and 0.96 or 0.74, isSelected and palette.accent or palette.borderDim, isSelected and 0.90 or 0.16, 10 * scale, 1)
+
+        local label = tab.name or ""
+        local labelWidth = Menu.GetTextWidth(label, 12)
+        local textX = tabX + (tabWidth / 2) - (labelWidth / 2)
+        local textY = tabY + (pillHeight / 2) - (6 * scale)
+        local textColor = isSelected and palette.text or palette.muted
+        Menu.DrawText(textX, textY, label, 12, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_BaseDrawItem_PanelRefresh = Menu.DrawItem
+function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+
+    if item.isSeparator then
+        local lineY = itemY + (itemHeight / 2)
+        local label = tostring(item.separatorText or "")
+        local labelWidth = Menu.GetTextWidth(label, 10)
+        local chipWidth = labelWidth + (22 * scale)
+        local chipX = x + (width / 2) - (chipWidth / 2)
+        local leftLineWidth = math.max(0, chipX - x - (16 * scale))
+        local rightLineX = chipX + chipWidth + (8 * scale)
+        local rightLineWidth = math.max(0, (x + width - (16 * scale)) - rightLineX)
+
+        if leftLineWidth > 0 then
+            Menu.DrawRoundedPanel(x + (16 * scale), lineY, leftLineWidth, 1, palette.borderDim, 0.34, 1)
+        end
+        if rightLineWidth > 0 then
+            Menu.DrawRoundedPanel(rightLineX, lineY, rightLineWidth, 1, palette.borderDim, 0.34, 1)
+        end
+
+        Menu.DrawFramedPanel(chipX, itemY + (itemHeight / 2) - (9 * scale), chipWidth, 18 * scale, palette.panel2, 0.88, palette.borderDim, 0.16, 9 * scale, 1)
+        Menu.DrawText(chipX + (11 * scale), itemY + (itemHeight / 2) - (5 * scale), label, 10, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
+        return
+    end
+
+    local panelX = x + (8 * scale)
+    local panelY = itemY + (3 * scale)
+    local panelW = width - (16 * scale)
+    local panelH = itemHeight - (6 * scale)
+    local radius = 11 * scale
+
+    if isSelected and Menu.DrawSoftShadow then
+        Menu.DrawSoftShadow(panelX, panelY, panelW, panelH, radius, 0.17, 6)
+    end
+
+    Menu.DrawFramedPanel(panelX, panelY, panelW, panelH, isSelected and palette.panel3 or palette.panel2, isSelected and 0.96 or 0.78, isSelected and palette.accent or palette.borderDim, isSelected and 0.82 or 0.12, radius, 1)
+
+    if isSelected then
+        Menu.DrawRoundedPanel(panelX + (1 * scale), panelY + (1 * scale), 4 * scale, panelH - (2 * scale), palette.accent, 1.0, 4 * scale)
+    end
+
+    local textColor = isSelected and palette.text or palette.text
+    Menu.DrawText(panelX + (12 * scale), panelY + (panelH / 2) - (7 * scale), item.name or "", 13, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 0.98)
+
+    if item.type == "toggle" then
+        local toggleWidth = 38 * scale
+        local toggleHeight = 18 * scale
+        local toggleX = panelX + panelW - toggleWidth - (10 * scale)
+        local toggleY = panelY + (panelH / 2) - (toggleHeight / 2)
+        Menu.DrawToggleSwitch(toggleX, toggleY, item.value == true)
+    elseif item.type == "selector" and item.options then
+        local selectedIndex = item.selected or 1
+        local selectedOption = tostring(item.options[selectedIndex] or "")
+        local fullText = "< " .. selectedOption .. " >"
+        local selectorWidth = Menu.GetTextWidth(fullText, 12)
+        local selectorX = panelX + panelW - selectorWidth - (12 * scale)
+        Menu.DrawText(selectorX, panelY + (panelH / 2) - (6 * scale), fullText, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98)
+    elseif item.type == "action" then
+        local chevron = "›"
+        local cw = Menu.GetTextWidth(chevron, 16)
+        Menu.DrawText(panelX + panelW - cw - (12 * scale), panelY + (panelH / 2) - (8 * scale), chevron, 16, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.95)
+    else
+        _Menu_BaseDrawItem_PanelRefresh(x, itemY, width, itemHeight, item, isSelected)
+    end
+end
+
+local _Menu_BaseDrawFooter_PanelRefresh = Menu.DrawFooter
+function Menu.DrawFooter()
+    _Menu_BaseDrawFooter_PanelRefresh()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+
+    Menu.DrawRoundedPanel(bounds.x + (10 * scale), bounds.footerY + (4 * scale), 94 * scale, bounds.footerHeight - (8 * scale), palette.accent, 0.05, 10 * scale)
 end
 
 return Menu
