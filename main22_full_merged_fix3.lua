@@ -1375,7 +1375,7 @@ end
 
 function Menu.DrawLoadingBar(alpha)
     if alpha <= 0 then return end
-    
+
     local screenWidth = 1920
     local screenHeight = 1080
     if Susano and Susano.GetScreenWidth and Susano.GetScreenHeight then
@@ -1383,96 +1383,70 @@ function Menu.DrawLoadingBar(alpha)
         screenHeight = Susano.GetScreenHeight()
     end
 
-    local centerX = screenWidth / 2
-    local centerY = screenHeight - 150
-    local radius = 40
-    local thickness = 8
+    local palette = Menu.GetThemePalette and Menu.GetThemePalette() or {
+        panel = { r = 7, g = 10, b = 16 },
+        panel2 = { r = 11, g = 15, b = 24 },
+        panel3 = { r = 16, g = 21, b = 32 },
+        accent = Menu.Colors.SelectedBg or { r = 148, g = 0, b = 211 },
+        borderDim = { r = 72, g = 82, b = 104 },
+        text = { r = 248, g = 250, b = 255 },
+        muted = { r = 172, g = 181, b = 198 },
+        soft = { r = 126, g = 136, b = 156 }
+    }
 
-    local currentTime = GetGameTimer() or 0
-    local elapsedTime = 0
-    if Menu.LoadingStartTime then
-        elapsedTime = currentTime - Menu.LoadingStartTime
+    local width = 420
+    local height = 118
+    local x = (screenWidth / 2) - (width / 2)
+    local y = screenHeight - 220
+
+    if Menu.DrawSoftShadowModern then
+        Menu.DrawSoftShadowModern(x + 8, y + 10, width - 16, height - 8, 16)
     end
-
-    local loadingText = ""
-    if elapsedTime < 1000 then
-        loadingText = "Injecting"
-    elseif elapsedTime < 2000 then
-        loadingText = "Have Fun !"
+    if Menu.DrawFramedPanelModern then
+        Menu.DrawFramedPanelModern(x, y, width, height, palette.panel2, 0.97 * alpha, palette.accent, 0.45 * alpha, 16, 1)
+        Menu.DrawRoundedPanelModern(x + 1, y + 1, width - 2, math.max(28, height * 0.36), { r = 255, g = 255, b = 255 }, 0.03 * alpha, 15)
     else
-        loadingText = "Have Fun !"
+        Menu.DrawRoundedRect(x, y, width, height, palette.panel2.r, palette.panel2.g, palette.panel2.b, math.floor(247 * alpha), 16)
     end
 
-    if loadingText ~= "" then
-        local textSize = 18
-        local textWidth = 0
-        if Susano and Susano.GetTextWidth then
-            textWidth = Susano.GetTextWidth(loadingText, textSize)
-        else
-            textWidth = string.len(loadingText) * 10
-        end
-        local textX = centerX - (textWidth / 2)
-        local textY = centerY - radius - 40
-        Menu.DrawText(textX, textY, loadingText, textSize, 1.0, 1.0, 1.0, 1.0 * alpha)
+    local loadingTitle = "Injecting Modules"
+    local loadingSub = "Initializing premium components"
+    if Menu.LoadingProgress >= 35 and Menu.LoadingProgress < 70 then
+        loadingSub = "Binding runtime hooks"
+    elseif Menu.LoadingProgress >= 70 then
+        loadingSub = "Finalizing interface"
     end
 
-    local segments = 90
-    local step = 360 / segments
-    local startAngle = -90
+    Menu.DrawText(x + 20, y + 18, loadingTitle, 22, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0 * alpha)
+    Menu.DrawText(x + 20, y + 46, loadingSub, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98 * alpha)
 
-    for i = 0, segments do
-        local angle = math.rad(startAngle + (i * step))
-        local px = centerX + radius * math.cos(angle)
-        local py = centerY + radius * math.sin(angle)
-        local outlineSize = thickness + 4
-        
-        if Susano and Susano.DrawRectFilled then
-            Susano.DrawRectFilled(px - outlineSize/2, py - outlineSize/2, outlineSize, outlineSize, 0.0, 0.0, 0.0, 1.0 * alpha, outlineSize/2)
-        else
-            Menu.DrawRect(px - outlineSize/2, py - outlineSize/2, outlineSize, outlineSize, 0, 0, 0, 255 * alpha)
-        end
-    end
+    local barX = x + 20
+    local barY = y + 78
+    local barW = width - 40
+    local barH = 12
+    local progress = math.max(0.0, math.min(1.0, (Menu.LoadingProgress or 0.0) / 100.0))
 
-    for i = 0, segments do
-        local angle = math.rad(startAngle + (i * step))
-        local px = centerX + radius * math.cos(angle)
-        local py = centerY + radius * math.sin(angle)
-        
-        if Susano and Susano.DrawRectFilled then
-            Susano.DrawRectFilled(px - thickness/2, py - thickness/2, thickness, thickness, 0.15, 0.15, 0.15, 1.0 * alpha, thickness/2)
-        else
-            Menu.DrawRect(px - thickness/2, py - thickness/2, thickness, thickness, 38, 38, 38, 255 * alpha)
-        end
-    end
-
-    local progressSegments = math.floor(segments * (Menu.LoadingProgress / 100.0))
-    local accentR = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.r) and (Menu.Colors.SelectedBg.r / 255.0) or 1.0
-    local accentG = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.g) and (Menu.Colors.SelectedBg.g / 255.0) or 0.0
-    local accentB = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.b) and (Menu.Colors.SelectedBg.b / 255.0) or 1.0
-
-    for i = 0, progressSegments do
-        local angle = math.rad(startAngle + (i * step))
-        local px = centerX + radius * math.cos(angle)
-        local py = centerY + radius * math.sin(angle)
-        
-        if Susano and Susano.DrawRectFilled then
-            Susano.DrawRectFilled(px - thickness/2, py - thickness/2, thickness + 1, thickness + 1, accentR, accentG, accentB, 1.0 * alpha, (thickness + 1)/2)
-        else
-            Menu.DrawRect(px - thickness/2, py - thickness/2, thickness + 1, thickness + 1, accentR * 255, accentG * 255, accentB * 255, 255 * alpha)
-        end
-    end
-
-    local percentText = string.format("%.0f%%", Menu.LoadingProgress)
-    local percentTextSize = 16
-    local percentTextWidth = 0
-    if Susano and Susano.GetTextWidth then
-        percentTextWidth = Susano.GetTextWidth(percentText, percentTextSize)
+    if Menu.DrawFramedPanelModern then
+        Menu.DrawFramedPanelModern(barX, barY, barW, barH, palette.panel3, 0.96 * alpha, palette.borderDim, 0.22 * alpha, 8, 1)
     else
-        percentTextWidth = string.len(percentText) * 9
+        Menu.DrawRoundedRect(barX, barY, barW, barH, palette.panel3.r, palette.panel3.g, palette.panel3.b, math.floor(245 * alpha), 8)
     end
-    local percentTextX = centerX - (percentTextWidth / 2)
-    local percentTextY = centerY - (percentTextSize / 2)
-    Menu.DrawText(percentTextX, percentTextY, percentText, percentTextSize, 1.0, 1.0, 1.0, 1.0 * alpha)
+
+    if progress > 0 then
+        local fillW = math.max(14, barW * progress)
+        if Menu.DrawRoundedPanelModern then
+            Menu.DrawRoundedPanelModern(barX + 1, barY + 1, fillW - 2, barH - 2, palette.accent, 0.94 * alpha, 7)
+            Menu.DrawRoundedPanelModern(barX + 1, barY + 1, fillW - 2, math.max(4, (barH - 2) * 0.55), { r = 255, g = 255, b = 255 }, 0.04 * alpha, 6)
+        else
+            Menu.DrawRoundedRect(barX + 1, barY + 1, fillW - 2, barH - 2, palette.accent.r, palette.accent.g, palette.accent.b, math.floor(240 * alpha), 7)
+        end
+    end
+
+    local percentText = string.format("%d%%", math.floor(Menu.LoadingProgress or 0.0))
+    local statusText = "Modules ready: " .. tostring(math.floor((Menu.LoadingProgress or 0.0) / 10)) .. "/10"
+    local percentW = (Menu.GetTextWidthModern and Menu.GetTextWidthModern(percentText, 13)) or 24
+    Menu.DrawText(x + width - percentW - 20, y + 18, percentText, 13, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0 * alpha)
+    Menu.DrawText(x + 20, y + 95, statusText, 11, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.96 * alpha)
 end
 
 function Menu.DrawFooter()
@@ -3182,85 +3156,6 @@ function Menu.DrawFooter()
     Menu.DrawText(x + footerW - rightWidth - (14 * scale), footerY + (footerH / 2) - (6 * scale), rightText, 11, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.98)
 end
 
-
-
--- ===== INJECT UI WITH LOADING BAR =====
-Menu.InjectUI = {
-    visible = true,
-    alpha = 0.0,
-    progress = 0.0
-}
-
-CreateThread(function()
-    while Menu.InjectUI.visible do
-        Wait(0)
-
-        if Menu.InjectUI.alpha < 1.0 then
-            Menu.InjectUI.alpha = Menu.InjectUI.alpha + 0.02
-        end
-
-        if Menu.InjectUI.progress < 1.0 then
-            Menu.InjectUI.progress = math.min(1.0, Menu.InjectUI.progress + 0.0035)
-        end
-
-        local a = Menu.InjectUI.alpha
-        local pulse = (math.sin(GetGameTimer() / 260) + 1.0) * 0.5
-
-        local w, h = 0.30, 0.13
-        local x, y = 0.5 - w / 2, 0.5 - h / 2
-
-        if Susano and Susano.DrawBlur then
-            Susano.DrawBlur(0.0, 0.0, 1.0, 1.0, 14.0)
-        end
-
-        DrawRect(x + w / 2, y + h / 2, w, h, 8, 10, 16, math.floor(185 * a))
-
-        SetTextScale(0.60, 0.60)
-        SetTextCentre(true)
-        SetTextColour(255, 255, 255, math.floor(255 * a))
-        BeginTextCommandDisplayText("STRING")
-        AddTextComponentSubstringPlayerName("~b~susano")
-        EndTextCommandDisplayText(0.5, y + 0.028)
-
-        SetTextScale(0.32, 0.32)
-        SetTextCentre(true)
-        SetTextColour(200, 255, 210, math.floor(255 * a))
-        BeginTextCommandDisplayText("STRING")
-        AddTextComponentSubstringPlayerName("Successfully Injected")
-        EndTextCommandDisplayText(0.5, y + 0.062)
-
-        local barW, barH = 0.22, 0.010
-        local barX, barY = 0.5 - barW / 2, y + 0.088
-
-        DrawRect(barX + barW / 2, barY + barH / 2, barW, barH, 20, 24, 34, math.floor(220 * a))
-
-        local fillW = barW * Menu.InjectUI.progress
-        if fillW > 0.0 then
-            DrawRect(
-                barX - (barW / 2) + (fillW / 2) + (barW / 2),
-                barY + barH / 2,
-                fillW,
-                barH,
-                120 + math.floor(40 * pulse),
-                80,
-                255,
-                math.floor(235 * a)
-            )
-        end
-
-        SetTextScale(0.28, 0.28)
-        SetTextCentre(true)
-        SetTextColour(235, 235, 235, math.floor(255 * a))
-        BeginTextCommandDisplayText("STRING")
-        AddTextComponentSubstringPlayerName("Press ~p~RSHIFT~w~ to open menu")
-        EndTextCommandDisplayText(0.5, y + 0.105)
-
-        if Menu.InjectUI.progress >= 1.0 then
-            Wait(1200)
-            Menu.InjectUI.visible = false
-        end
-    end
-end)
 
 return Menu.Colors.SelectedBg or { r = 148, g = 0, b = 211 }
 end
