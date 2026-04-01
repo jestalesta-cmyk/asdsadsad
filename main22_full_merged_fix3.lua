@@ -2249,6 +2249,104 @@ end
 
 
 
+
+function Menu.InfiniteJumpBug(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    CreateThread(function()
+        for i = 1, 40 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    if NetworkRequestControlOfEntity then
+                        for j = 1, 8 do
+                            NetworkRequestControlOfEntity(ped)
+                            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                                break
+                            end
+                            Wait(0)
+                        end
+                    end
+
+                    if SetPedToRagdoll then
+                        SetPedToRagdoll(ped, 700, 700, 0, true, true, false)
+                    end
+
+                    if SetEntityVelocity then
+                        SetEntityVelocity(ped, math.random(-3,3) * 1.0, math.random(-3,3) * 1.0, 30.0)
+                    end
+
+                    if ApplyForceToEntity then
+                        ApplyForceToEntity(
+                            ped, 1,
+                            math.random(-8,8) * 1.0,
+                            math.random(-8,8) * 1.0,
+                            180.0,
+                            0.0, 0.0, 0.0,
+                            0,
+                            true, true, true, false, true
+                        )
+                    end
+
+                    if GetEntityCoords and AddExplosion then
+                        local c = GetEntityCoords(ped)
+                        AddExplosion(c.x, c.y, c.z - 1.0, 4, 0.0, false, false, 0.0, false)
+                    end
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    if NetworkRequestControlOfEntity then
+        for i = 1, 15 do
+            NetworkRequestControlOfEntity(ped)
+            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                break
+            end
+            Wait(0)
+        end
+    end
+
+    CreateThread(function()
+        for i = 1, 40 do
+            if DoesEntityExist(ped) then
+                if SetPedToRagdoll then
+                    SetPedToRagdoll(ped, 600, 600, 0, true, true, false)
+                end
+
+                if ApplyForceToEntity then
+                    ApplyForceToEntity(
+                        ped,
+                        1,
+                        math.random(-5,5),
+                        math.random(-5,5),
+                        150.0,
+                        0.0,0.0,0.0,
+                        0,
+                        true,true,true,false,true
+                    )
+                end
+
+                if SetEntityVelocity then
+                    SetEntityVelocity(ped, 0.0, 0.0, 25.0)
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+
 function Menu.CloneNPCAttackPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
@@ -5462,6 +5560,16 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.LaunchPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Clone NPC Attack"
+                },
+                {
+                    name = "Infinite Jump Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.InfiniteJumpBug(selectedPlayer)
                     end
                 },
                 {
