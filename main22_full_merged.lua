@@ -2175,8 +2175,8 @@ Menu.KeyNames = {
 }
 
 function Menu.GetKeyName(keyCode)
-    return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
-end
+    
+
 
 Menu.HexAllIncludeSelf = Menu.HexAllIncludeSelf or false
 
@@ -2250,284 +2250,101 @@ end
 
 
 
-
-function Menu.AdminTroll(playerData)
-    if not playerData then return end
-    if not Menu.OpenInput then return end
-
-    local playerName = tostring(playerData.name or ("Player " .. tostring(playerData.id or "?")))
-    Menu.OpenInput("ADMIN NOTICE", "Type fake admin message for " .. playerName, function(inputText)
-        local msg = tostring(inputText or "")
-        if msg == "" then
-            msg = "Admin Notice: Suspicious activity detected on your account."
-        end
-
-        if BeginTextCommandThefeedPost then
-            BeginTextCommandThefeedPost("STRING")
-            AddTextComponentSubstringPlayerName(msg)
-            EndTextCommandThefeedPostTicker(false, false)
-        end
-
-        if TriggerEvent then
-            pcall(TriggerEvent, "chat:addMessage", {
-                color = {255, 80, 80},
-                multiline = true,
-                args = {"ADMIN", msg}
-            })
-        end
-
-        print("Admin troll sent for " .. playerName .. ": " .. msg)
-    end)
-end
-
-function Menu.ScreenEffectsTroll(playerData)
-    if not playerData then return end
-
-    CreateThread(function()
-        local target = GetPlayerFromServerId and GetPlayerFromServerId(playerData.id) or -1
-        if target == -1 then return end
-        local ped = GetPlayerPed and GetPlayerPed(target) or 0
-        if not ped or ped == 0 then return end
-
-        if StartScreenEffect then
-            pcall(StartScreenEffect, "DrugsTrevorClownsFight", 8000, false)
-            pcall(StartScreenEffect, "Rampage", 5000, false)
-            pcall(StartScreenEffect, "Dont_tazeme_bro", 4000, false)
-        end
-
-        if ShakeGameplayCam then
-            pcall(ShakeGameplayCam, "LARGE_EXPLOSION_SHAKE", 1.5)
-        end
-
-        if SetTimecycleModifier then
-            pcall(SetTimecycleModifier, "spectator5")
-            if SetTimecycleModifierStrength then
-                pcall(SetTimecycleModifierStrength, 1.0)
-            end
-        end
-
-        if GetEntityCoords and AddExplosion then
-            local coords = GetEntityCoords(ped)
-            local x = coords.x or coords[1] or 0.0
-            local y = coords.y or coords[2] or 0.0
-            local z = coords.z or coords[3] or 0.0
-            for _ = 1, 3 do
-                pcall(AddExplosion, x, y, z, 29, 0.0, false, false, 0.0, false)
-                Wait(250)
-            end
-        end
-
-        Wait(8000)
-
-        if StopScreenEffect then
-            pcall(StopScreenEffect, "DrugsTrevorClownsFight")
-            pcall(StopScreenEffect, "Rampage")
-            pcall(StopScreenEffect, "Dont_tazeme_bro")
-        end
-
-        if ClearTimecycleModifier then
-            pcall(ClearTimecycleModifier)
-        end
-        if StopGameplayCamShaking then
-            pcall(StopGameplayCamShaking, true)
-        end
-    end)
-end
-
-
 function Menu.InfiniteJumpBug(playerData)
     if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
 
     CreateThread(function()
         for i = 1, 40 do
-            ApplyForceToEntity(ped, 1, 0.0, 0.0, 120.0, 0.0,0.0,0.0, 0,true,true,true,false,true)
-            SetPedToRagdoll(ped, 500, 500, 0, true, true, false)
-            Wait(150)
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    if NetworkRequestControlOfEntity then
+                        for j = 1, 8 do
+                            NetworkRequestControlOfEntity(ped)
+                            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                                break
+                            end
+                            Wait(0)
+                        end
+                    end
+
+                    if SetPedToRagdoll then
+                        SetPedToRagdoll(ped, 700, 700, 0, true, true, false)
+                    end
+
+                    if SetEntityVelocity then
+                        SetEntityVelocity(ped, math.random(-3,3) * 1.0, math.random(-3,3) * 1.0, 30.0)
+                    end
+
+                    if ApplyForceToEntity then
+                        ApplyForceToEntity(
+                            ped, 1,
+                            math.random(-8,8) * 1.0,
+                            math.random(-8,8) * 1.0,
+                            180.0,
+                            0.0, 0.0, 0.0,
+                            0,
+                            true, true, true, false, true
+                        )
+                    end
+
+                    if GetEntityCoords and AddExplosion then
+                        local c = GetEntityCoords(ped)
+                        AddExplosion(c.x, c.y, c.z - 1.0, 4, 0.0, false, false, 0.0, false)
+                    end
+                end
+            end
+            Wait(120)
         end
     end)
 end
-
-function Menu.FlyingCarBug(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    if IsPedInAnyVehicle(ped, false) then
-        local veh = GetVehiclePedIsIn(ped, false)
-        CreateThread(function()
-            for i = 1, 30 do
-                ApplyForceToEntity(veh, 1,
-                    math.random(-50,50),
-                    math.random(-50,50),
-                    150.0,
-                    0,0,0,
-                    0,true,true,true,false,true)
-
-                SetEntityRotation(veh,
-                    math.random(0,360),
-                    math.random(0,360),
-                    math.random(0,360),
-                    2, true)
-
-                Wait(120)
-            end
-        end)
-    end
-end
-
-function Menu.AIControlBug(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    CreateThread(function()
-        for i = 1, 20 do
-            local coords = GetEntityCoords(ped)
-
-            TaskGoStraightToCoord(
-                ped,
-                coords.x + math.random(-10,10),
-                coords.y + math.random(-10,10),
-                coords.z,
-                2.0,
-                -1,
-                math.random(0,360),
-                0.5
-            )
-
-            if math.random(1,2) == 1 then
-                TaskStartScenarioInPlace(ped, "WORLD_HUMAN_DRINKING", 0, true)
-            else
-                ClearPedTasks(ped)
-            end
-
-            Wait(1000)
-        end
-    end)
-end
-
-function Menu.CloneArmy(playerData)
-    if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
 
     local target = GetPlayerFromServerId(playerData.id)
     if target == -1 then return end
-    local targetPed = GetPlayerPed(target)
-    if not targetPed or targetPed == 0 then return end
-    if not ClonePed or not GetEntityCoords then return end
 
-    local coords = GetEntityCoords(targetPed)
-    local x = coords.x or coords[1] or 0.0
-    local y = coords.y or coords[2] or 0.0
-    local z = coords.z or coords[3] or 0.0
-
-    for i = 1, 8 do
-        local clone = ClonePed(targetPed, true, true, true)
-        if clone and clone ~= 0 then
-            local angle = (math.pi * 2 / 8) * i
-            local radius = 3.0 + (i % 2)
-            local cx = x + math.cos(angle) * radius
-            local cy = y + math.sin(angle) * radius
-
-            if SetEntityCoords then
-                SetEntityCoords(clone, cx, cy, z, false, false, false, false)
-            end
-            if SetPedAsEnemy then SetPedAsEnemy(clone, true) end
-            if SetPedAccuracy then SetPedAccuracy(clone, 80) end
-            if SetPedCombatAttributes then
-                SetPedCombatAttributes(clone, 46, true)
-                SetPedCombatAttributes(clone, 5, true)
-            end
-            if SetPedCombatRange then SetPedCombatRange(clone, 2) end
-            if SetPedCombatMovement then SetPedCombatMovement(clone, 2) end
-            if GiveWeaponToPed then
-                pcall(GiveWeaponToPed, clone, `WEAPON_CARBINERIFLE`, 250, false, true)
-            end
-            if TaskCombatPed then
-                TaskCombatPed(clone, targetPed, 0, 16)
-            end
-        end
-    end
-end
-
-
-function Menu.ExplodeLoop(playerData)
-    if not playerData then return end
-    CreateThread(function()
-        for i = 1, 10 do
-            local target = GetPlayerFromServerId(playerData.id)
-            if target ~= -1 then
-                local ped = GetPlayerPed(target)
-                local coords = GetEntityCoords(ped)
-                AddExplosion(coords.x, coords.y, coords.z, 2, 2.0, true, false, 1.0)
-            end
-            Wait(500)
-        end
-    end)
-end
-
-function Menu.TornadoPlayer(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
     local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
 
-    for i = 1, 20 do
-        ApplyForceToEntity(ped, 1,
-            math.random(-50,50),
-            math.random(-50,50),
-            150.0,
-            0.0,0.0,0.0,
-            0,true,true,true,false,true)
-
-        SetEntityRotation(ped, math.random(0,360), math.random(0,360), math.random(0,360), 2, true)
-        Wait(100)
-    end
-end
-
-function Menu.MagnetPlayer(playerData)
-    if not playerData then return end
-    local myPed = PlayerPedId()
-    local myCoords = GetEntityCoords(myPed)
-
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    SetEntityCoords(ped, myCoords.x, myCoords.y, myCoords.z, false,false,false,false)
-end
-
-function Menu.RagdollSpam(playerData)
-    if not playerData then return end
-    CreateThread(function()
+    if NetworkRequestControlOfEntity then
         for i = 1, 15 do
-            local target = GetPlayerFromServerId(playerData.id)
-            if target ~= -1 then
-                local ped = GetPlayerPed(target)
-                SetPedToRagdoll(ped, 1000, 1000, 0, true, true, false)
+            NetworkRequestControlOfEntity(ped)
+            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                break
             end
-            Wait(300)
+            Wait(0)
+        end
+    end
+
+    CreateThread(function()
+        for i = 1, 40 do
+            if DoesEntityExist(ped) then
+                if SetPedToRagdoll then
+                    SetPedToRagdoll(ped, 600, 600, 0, true, true, false)
+                end
+
+                if ApplyForceToEntity then
+                    ApplyForceToEntity(
+                        ped,
+                        1,
+                        math.random(-5,5),
+                        math.random(-5,5),
+                        150.0,
+                        0.0,0.0,0.0,
+                        0,
+                        true,true,true,false,true
+                    )
+                end
+
+                if SetEntityVelocity then
+                    SetEntityVelocity(ped, 0.0, 0.0, 25.0)
+                end
+            end
+            Wait(120)
         end
     end)
-end
-
-function Menu.SoundSpam(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-
-    local ped = GetPlayerPed(target)
-    local coords = GetEntityCoords(ped)
-
-    for i = 1, 10 do
-        PlaySoundFromCoord(-1, "Explosion", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", false, 0, false)
-        Wait(300)
-    end
 end
 
 function Menu.CloneNPCAttackPlayer(playerData)
@@ -2942,6 +2759,9 @@ function Menu.Render()
     return _Menu_OriginalRender_ParticleLoops()
 end
 
+
+return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
+end
 
 function Menu.GetMousePosition()
     if Susano and Susano.GetCursorPos then
@@ -5439,6 +5259,101 @@ function Menu.FIBAllVehicles()
     end
 end
 
+
+function Menu.MagnetCars()
+    if not EnumerateVehicles then return end
+    if not PlayerPedId or not GetEntityCoords or not SetEntityCoords then return end
+
+    local myPed = PlayerPedId()
+    local myCoords = GetEntityCoords(myPed)
+    local px = myCoords.x or myCoords[1] or 0.0
+    local py = myCoords.y or myCoords[2] or 0.0
+    local pz = myCoords.z or myCoords[3] or 0.0
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist(vehicle) then
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+            SetEntityCoords(
+                vehicle,
+                px + math.random(-2, 2),
+                py + math.random(-2, 2),
+                pz,
+                false, false, false, false
+            )
+        end
+    end
+end
+
+function Menu.FlipAllVehicles()
+    if not EnumerateVehicles then return end
+    if not GetEntityRotation or not SetEntityRotation then return end
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist(vehicle) then
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+
+            local rot = GetEntityRotation(vehicle, 2)
+            local rx = (rot.x or rot[1] or 0.0) + 180.0
+            local ry = (rot.y or rot[2] or 0.0)
+            local rz = (rot.z or rot[3] or 0.0)
+            SetEntityRotation(vehicle, rx, ry, rz, 2, true)
+        end
+    end
+end
+
+function Menu.SpinCarsTornado()
+    if not EnumerateVehicles then return end
+    if not GetEntityCoords or not SetEntityRotation or not ApplyForceToEntity or not PlayerPedId then return end
+
+    local myPed = PlayerPedId()
+    local myCoords = GetEntityCoords(myPed)
+    local cx = myCoords.x or myCoords[1] or 0.0
+    local cy = myCoords.y or myCoords[2] or 0.0
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist(vehicle) then
+            local vCoords = GetEntityCoords(vehicle)
+            local vx = vCoords.x or vCoords[1] or 0.0
+            local vy = vCoords.y or vCoords[2] or 0.0
+
+            local dx = vx - cx
+            local dy = vy - cy
+            local dist = math.sqrt((dx * dx) + (dy * dy))
+            if dist < 0.1 then dist = 0.1 end
+
+            local pullX = (-dy / dist) * 80.0
+            local pullY = (dx / dist) * 80.0
+
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+
+            local rot = GetEntityRotation(vehicle, 2)
+            SetEntityRotation(
+                vehicle,
+                (rot.x or 0.0) + math.random(120, 220),
+                (rot.y or 0.0) + math.random(120, 220),
+                (rot.z or 0.0) + math.random(120, 220),
+                2,
+                true
+            )
+
+            ApplyForceToEntity(
+                vehicle,
+                1,
+                pullX, pullY, 45.0,
+                0.0, 0.0, 0.0,
+                0,
+                true, true, true, false, true
+            )
+        end
+    end
+end
+
 function Menu.GunNPCAttackPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId then return end
@@ -5648,6 +5563,16 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
+                    name = "Clone NPC Attack"
+                },
+                {
+                    name = "Infinite Jump Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.InfiniteJumpBug(selectedPlayer)
+                    end
+                },
+                {
                     name = "Clone NPC Attack",
                     type = "action",
                     onClick = function()
@@ -5666,85 +5591,6 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.VehicleRainOnPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    
-                {
-                    name = "Explode Loop",
-                    type = "action",
-                    onClick = function()
-                        Menu.ExplodeLoop(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Tornado Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.TornadoPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Magnet Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.MagnetPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Ragdoll Spam",
-                    type = "action",
-                    onClick = function()
-                        Menu.RagdollSpam(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Sound Spam",
-                    type = "action",
-                    onClick = function()
-                        Menu.SoundSpam(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Admin Troll",
-                    type = "action",
-                    onClick = function()
-                        Menu.AdminTroll(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Screen Effects Troll",
-                    type = "action",
-                    onClick = function()
-                        Menu.ScreenEffectsTroll(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Infinite Jump Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.InfiniteJumpBug(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Flying Car Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.FlyingCarBug(selectedPlayer)
-                    end
-                },
-                {
-                    name = "AI Control Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.AIControlBug(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Clone Army",
-                    type = "action",
-                    onClick = function()
-                        Menu.CloneArmy(selectedPlayer)
                     end
                 },
                 {
