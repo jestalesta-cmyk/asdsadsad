@@ -2464,113 +2464,113 @@ function Menu.LaunchPlayer(playerData)
     if not GetPlayerFromServerId or not GetPlayerPed then return end
 
     CreateThread(function()
-        for tick = 1, 18 do
-            local target = GetPlayerFromServerId(playerData.id)
-            if target == -1 then
-                break
-            end
+        local target = GetPlayerFromServerId(playerData.id)
+        if target == -1 then
+            return
+        end
 
-            local ped = GetPlayerPed(target)
-            if not ped or ped == 0 then
-                break
-            end
+        local ped = GetPlayerPed(target)
+        if not ped or ped == 0 then
+            return
+        end
 
-            if NetworkRequestControlOfEntity then
-                for i = 1, 8 do
-                    NetworkRequestControlOfEntity(ped)
-                    if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
-                        break
-                    end
-                    Wait(0)
+        local model = `adder`
+
+        if RequestModel and HasModelLoaded then
+            RequestModel(model)
+            local tries = 0
+            while not HasModelLoaded(model) and tries < 200 do
+                tries = tries + 1
+                Wait(0)
+            end
+        end
+
+        if NetworkRequestControlOfEntity then
+            for i = 1, 12 do
+                NetworkRequestControlOfEntity(ped)
+                if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                    break
+                end
+                Wait(0)
+            end
+        end
+
+        local coords = GetEntityCoords and GetEntityCoords(ped) or nil
+        local x = coords and (coords.x or coords[1]) or 0.0
+        local y = coords and (coords.y or coords[2]) or 0.0
+        local z = coords and (coords.z or coords[3]) or 0.0
+
+        local veh = nil
+        if CreateVehicle then
+            veh = CreateVehicle(model, x, y, z + 0.6, 0.0, true, true)
+        end
+
+        if not veh or veh == 0 then
+            return
+        end
+
+        if NetworkRequestControlOfEntity then
+            for i = 1, 12 do
+                NetworkRequestControlOfEntity(veh)
+                if NetworkHasControlOfEntity and NetworkHasControlOfEntity(veh) then
+                    break
+                end
+                Wait(0)
+            end
+        end
+
+        if SetEntityAsMissionEntity then
+            SetEntityAsMissionEntity(veh, true, true)
+        end
+
+        if StartEntityFire then
+            pcall(StartEntityFire, ped)
+        end
+
+        if SetPedToRagdoll then
+            SetPedToRagdoll(ped, 1500, 1500, 0, true, true, false)
+        end
+
+        if AttachEntityToEntity then
+            AttachEntityToEntity(
+                veh, ped, 0,
+                0.0, 0.0, -0.35,
+                0.0, 0.0, 0.0,
+                true, true, false, true, 1, true
+            )
+        end
+
+        for tick = 1, 20 do
+            if DoesEntityExist and DoesEntityExist(veh) then
+                if SetEntityVelocity then
+                    SetEntityVelocity(veh, 0.0, 0.0, 26.0 + (tick * 1.1))
+                end
+
+                if ApplyForceToEntity then
+                    ApplyForceToEntity(
+                        veh,
+                        1,
+                        math.random(-2, 2) * 1.0,
+                        math.random(-2, 2) * 1.0,
+                        240.0,
+                        0.0, 0.0, 0.0,
+                        0,
+                        true, true, true, false, true
+                    )
                 end
             end
 
-            if tick == 1 and StartEntityFire then
-                pcall(StartEntityFire, ped)
-            end
-
-            if SetPedToRagdoll then
-                SetPedToRagdoll(ped, 900, 900, 0, true, true, false)
-            end
-
-            if SetEntityVelocity then
-                SetEntityVelocity(
-                    ped,
-                    math.random(-2, 2) * 1.0,
-                    math.random(-2, 2) * 1.0,
-                    22.0 + (tick * 0.8)
-                )
-            end
-
-            if ApplyForceToEntity then
-                ApplyForceToEntity(
-                    ped,
-                    1,
-                    math.random(-3, 3) * 1.0,
-                    math.random(-3, 3) * 1.0,
-                    170.0,
-                    0.0, 0.0, 0.0,
-                    0,
-                    true, true, true, false, true
-                )
+            if DoesEntityExist and DoesEntityExist(ped) and SetPedToRagdoll then
+                SetPedToRagdoll(ped, 700, 700, 0, true, true, false)
             end
 
             Wait(120)
         end
+
+        if DoesEntityExist and DoesEntityExist(veh) and DetachEntity then
+            DetachEntity(veh, true, true)
+        end
     end)
-end
-
-
-function Menu.LaunchPlayerV2(playerData)
-    if not playerData then return end
-    if not GetPlayerFromServerId or not GetPlayerPed then return end
-
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-
-    local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
-    if not GetEntityCoords or not CreateVehicle or not AttachEntityToEntityPhysically then return end
-
-    local coords = GetEntityCoords(ped)
-    local x = coords.x or coords[1] or 0.0
-    local y = coords.y or coords[2] or 0.0
-    local z = coords.z or coords[3] or 0.0
-
-    local model = `adder`
-
-    if RequestModel and HasModelLoaded then
-        RequestModel(model)
-        local tries = 0
-        while not HasModelLoaded(model) and tries < 300 do
-            tries = tries + 1
-            Wait(0)
-        end
-    end
-
-    local vehicle = CreateVehicle(model, x, y, z - 1.0, 0.0, true, true)
-    if not vehicle or vehicle == 0 then return end
-
-    if NetworkRequestControlOfEntity then
-        for i = 1, 10 do
-            NetworkRequestControlOfEntity(vehicle)
-            NetworkRequestControlOfEntity(ped)
-            Wait(0)
-        end
-    end
-
-    AttachEntityToEntityPhysically(
-        vehicle,
-        ped,
-        0, 0, 0,
-        2000.0, 1460.928, 1000.0,
-        10.0, 88.0, 600.0,
-        true, true, true, false, 0
-    )
-
-    if StartEntityFire then
-        pcall(StartEntityFire, ped)
-    end
 end
 
 function Menu.HEXAllPlayers()
@@ -5589,13 +5589,6 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.LaunchPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Launch Player v2",
-                    type = "action",
-                    onClick = function()
-                        Menu.LaunchPlayerV2(selectedPlayer)
                     end
                 },
                 {
