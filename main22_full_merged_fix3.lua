@@ -2463,47 +2463,113 @@ function Menu.LaunchPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
 
+    CreateThread(function()
+        for tick = 1, 18 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target == -1 then
+                break
+            end
+
+            local ped = GetPlayerPed(target)
+            if not ped or ped == 0 then
+                break
+            end
+
+            if NetworkRequestControlOfEntity then
+                for i = 1, 8 do
+                    NetworkRequestControlOfEntity(ped)
+                    if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                        break
+                    end
+                    Wait(0)
+                end
+            end
+
+            if tick == 1 and StartEntityFire then
+                pcall(StartEntityFire, ped)
+            end
+
+            if SetPedToRagdoll then
+                SetPedToRagdoll(ped, 900, 900, 0, true, true, false)
+            end
+
+            if SetEntityVelocity then
+                SetEntityVelocity(
+                    ped,
+                    math.random(-2, 2) * 1.0,
+                    math.random(-2, 2) * 1.0,
+                    22.0 + (tick * 0.8)
+                )
+            end
+
+            if ApplyForceToEntity then
+                ApplyForceToEntity(
+                    ped,
+                    1,
+                    math.random(-3, 3) * 1.0,
+                    math.random(-3, 3) * 1.0,
+                    170.0,
+                    0.0, 0.0, 0.0,
+                    0,
+                    true, true, true, false, true
+                )
+            end
+
+            Wait(120)
+        end
+    end)
+end
+
+
+function Menu.LaunchPlayerV2(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
     local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then
-        return
-    end
+    if target == -1 then return end
 
     local ped = GetPlayerPed(target)
     if not ped or ped == 0 then return end
+    if not GetEntityCoords or not CreateVehicle or not AttachEntityToEntityPhysically then return end
 
-    if NetworkRequestControlOfEntity then
-        for i = 1, 20 do
-            NetworkRequestControlOfEntity(ped)
-            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
-                break
-            end
+    local coords = GetEntityCoords(ped)
+    local x = coords.x or coords[1] or 0.0
+    local y = coords.y or coords[2] or 0.0
+    local z = coords.z or coords[3] or 0.0
+
+    local model = `adder`
+
+    if RequestModel and HasModelLoaded then
+        RequestModel(model)
+        local tries = 0
+        while not HasModelLoaded(model) and tries < 300 do
+            tries = tries + 1
             Wait(0)
         end
     end
 
+    local vehicle = CreateVehicle(model, x, y, z - 1.0, 0.0, true, true)
+    if not vehicle or vehicle == 0 then return end
+
+    if NetworkRequestControlOfEntity then
+        for i = 1, 10 do
+            NetworkRequestControlOfEntity(vehicle)
+            NetworkRequestControlOfEntity(ped)
+            Wait(0)
+        end
+    end
+
+    AttachEntityToEntityPhysically(
+        vehicle,
+        ped,
+        0, 0, 0,
+        2000.0, 1460.928, 1000.0,
+        10.0, 88.0, 600.0,
+        true, true, true, false, 0
+    )
+
     if StartEntityFire then
         pcall(StartEntityFire, ped)
-    end
-
-    if SetPedToRagdoll then
-        SetPedToRagdoll(ped, 2000, 2000, 0, true, true, false)
-    end
-
-    if SetEntityVelocity then
-        SetEntityVelocity(ped, 0.0, 0.0, 55.0)
-    end
-
-    if ApplyForceToEntity then
-        ApplyForceToEntity(
-            ped,
-            1,
-            math.random(-4, 4) * 1.0,
-            math.random(-4, 4) * 1.0,
-            320.0,
-            0.0, 0.0, 0.0,
-            0,
-            true, true, true, false, true
-        )
     end
 end
 
@@ -5523,6 +5589,13 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.LaunchPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Launch Player v2",
+                    type = "action",
+                    onClick = function()
+                        Menu.LaunchPlayerV2(selectedPlayer)
                     end
                 },
                 {
