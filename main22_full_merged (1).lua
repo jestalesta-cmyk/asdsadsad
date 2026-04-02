@@ -1,5 +1,5 @@
 local Menu = {}
-Menu.Visible = false
+Menu.Visible = true
 Menu.CurrentCategory = 2
 Menu.CurrentPage = 1
 Menu.ItemsPerPage = 9
@@ -71,7 +71,7 @@ end
 
 Menu.Banner = {
     enabled = true,
-    imageUrl = "https://i.imgur.com/cOFPinI.gif",
+    imageUrl = "https://i.imgur.com/qnsRmqY.gif",
     height = 100
 }
 
@@ -143,27 +143,27 @@ function Menu.ApplyTheme(themeName)
     if themeLower == "red" then
         Menu.Colors.HeaderPink = { r = 255, g = 0, b = 0 }
         Menu.Colors.SelectedBg = { r = 255, g = 0, b = 0 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/cOFPinI.gif"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "Red"
     elseif themeLower == "purple" then
         Menu.Colors.HeaderPink = { r = 148, g = 0, b = 211 }
         Menu.Colors.SelectedBg = { r = 148, g = 0, b = 211 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "Purple"
     elseif themeLower == "gray" then
         Menu.Colors.HeaderPink = { r = 128, g = 128, b = 128 }
         Menu.Colors.SelectedBg = { r = 128, g = 128, b = 128 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/iZnBhaR.jpeg"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "Gray"
     elseif themeLower == "pink" then
         Menu.Colors.HeaderPink = { r = 255, g = 20, b = 147 }
         Menu.Colors.SelectedBg = { r = 255, g = 20, b = 147 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/BbABj2n.png"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "pink"
     else
         Menu.Colors.HeaderPink = { r = 148, g = 0, b = 211 }
         Menu.Colors.SelectedBg = { r = 148, g = 0, b = 211 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "Purple"
     end
 
@@ -176,7 +176,7 @@ Menu.Position = {
     x = 50,
     y = 100,
     width = 404,
-    itemHeight = 38,
+    itemHeight = 42,
     mainMenuHeight = 34,
     headerHeight = 114,
     footerHeight = 30,
@@ -234,7 +234,34 @@ end
 
 function Menu.DrawText(x, y, text, size_px, r, g, b, a)
     local scale = Menu.Scale or 1.0
-    size_px = (size_px or 16) * scale
+    local tuning = Menu.FontTuning or {}
+    local original = size_px or 16
+    local mult = tuning.sizeMultiplier or 1.0
+
+    if original >= 19 then
+        mult = tuning.headerMultiplier or mult
+    elseif original >= 15 then
+        mult = tuning.itemMultiplier or mult
+    elseif original >= 13 then
+        mult = tuning.tabMultiplier or mult
+    else
+        mult = tuning.footerMultiplier or mult
+    end
+
+    size_px = ((size_px or 16) * scale * mult)
+    size_px = math.floor(size_px + 0.5)
+
+    if original >= 19 then
+        if size_px < 22 then size_px = 22 end
+    elseif original >= 15 then
+        if size_px < 19 then size_px = 19 end
+    elseif original >= 13 then
+        if size_px < 16 then size_px = 16 end
+    else
+        if size_px < 14 then size_px = 14 end
+    end
+
+    text = Menu.StripColorCodes and Menu.StripColorCodes(text) or tostring(text or "")
     r = r or 1.0
     g = g or 1.0
     b = b or 1.0
@@ -245,7 +272,10 @@ function Menu.DrawText(x, y, text, size_px, r, g, b, a)
     if b > 1.0 then b = b / 255.0 end
     if a > 1.0 then a = a / 255.0 end
 
-    Susano.DrawText(x, y, text, size_px, r, g, b, a)
+    local spacing = Menu.TextSpacing or 0.40
+    if Susano and Susano.DrawText then
+        Susano.DrawText(x, y, text, size_px, r, g, b, a, spacing)
+    end
 end
 
 function Menu.DrawHeader()
@@ -378,92 +408,87 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
     end
 
     local numTabs = #category.tabs
-    local tabWidth = width / numTabs
-    local currentX = x
+    if numTabs < 1 then return end
+
+    local outerPad = 6 * scale
+    local gap = (numTabs >= 5) and (4 * scale) or (8 * scale)
+    local innerX = x + outerPad
+    local innerWidth = width - (outerPad * 2)
+    local containerY = startY + (4 * scale)
+    local containerH = tabHeight - (8 * scale)
+
+    local totalGap = gap * (numTabs - 1)
+    local tabWidth = (innerWidth - totalGap) / numTabs
+    local currentX = innerX
+
+    local targetX, targetW = innerX, tabWidth
+    for i = 1, numTabs do
+        if i == Menu.CurrentTab then
+            targetX = innerX + ((i - 1) * (tabWidth + gap))
+            targetW = tabWidth
+            break
+        end
+    end
+
+    if Menu.TabSelectorX == 0 then
+        Menu.TabSelectorX = targetX
+        Menu.TabSelectorWidth = targetW
+    end
+
+    local smooth = 0.22
+    Menu.TabSelectorX = Menu.TabSelectorX + (targetX - Menu.TabSelectorX) * smooth
+    Menu.TabSelectorWidth = Menu.TabSelectorWidth + (targetW - Menu.TabSelectorWidth) * smooth
+    if math.abs(Menu.TabSelectorX - targetX) < 0.5 then Menu.TabSelectorX = targetX end
+    if math.abs(Menu.TabSelectorWidth - targetW) < 0.5 then Menu.TabSelectorWidth = targetW end
 
     for i, tab in ipairs(category.tabs) do
         local tabX = currentX
-        local currentTabWidth
-        if i == numTabs then
-            currentTabWidth = (x + width) - currentX
-        else
-            currentTabWidth = tabWidth + (0.5 * scale)
-        end
-
+        local currentTabWidth = tabWidth
         local isSelected = (i == Menu.CurrentTab)
 
-        if isSelected then
-            local targetWidth = currentTabWidth
-            if i == numTabs then
-                targetWidth = math.min(currentTabWidth, (x + width) - tabX - (1 * scale))
+        if Susano and Susano.DrawRectFilled then
+            if isSelected then
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 188/255, 19/255, 29/255, 0.98, 8 * scale)
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY + 1, Menu.TabSelectorWidth, containerH * 0.30, 1.0, 1.0, 1.0, 0.03, 8 * scale)
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY + containerH - (2 * scale), Menu.TabSelectorWidth, 2 * scale, 1.0, 0.30, 0.34, 1.0, 0)
+            else
+                Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, 12/255, 16/255, 28/255, 0.96, 8 * scale)
             end
-
-            if Menu.TabSelectorX == 0 then
-                Menu.TabSelectorX = tabX
-                Menu.TabSelectorWidth = targetWidth
+        else
+            if isSelected then
+                Menu.DrawRoundedRect(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 188, 19, 29, 250, 8 * scale)
+            else
+                Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, 12, 16, 28, 245, 8 * scale)
             end
-
-            local smoothSpeed = Menu.SmoothFactor
-            Menu.TabSelectorX = Menu.TabSelectorX + (tabX - Menu.TabSelectorX) * smoothSpeed
-            Menu.TabSelectorWidth = Menu.TabSelectorWidth + (targetWidth - Menu.TabSelectorWidth) * smoothSpeed
-
-            if math.abs(Menu.TabSelectorX - tabX) < (0.5 * scale) then Menu.TabSelectorX = tabX end
-            if math.abs(Menu.TabSelectorWidth - targetWidth) < (0.5 * scale) then Menu.TabSelectorWidth = targetWidth end
-
-            local drawX = Menu.TabSelectorX
-            local drawWidth = Menu.TabSelectorWidth
-
-            local baseR = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.r) and (Menu.Colors.SelectedBg.r / 255.0) or 1.0
-            local baseG = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.g) and (Menu.Colors.SelectedBg.g / 255.0) or 0.0
-            local baseB = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.b) and (Menu.Colors.SelectedBg.b / 255.0) or 1.0
-            local darkenAmount = 0.4
-
-            local gradientSteps = 20
-            local stepHeight = tabHeight / gradientSteps
-            local selectorWidth = drawWidth
-            local selectorX = drawX
-
-            for step = 0, gradientSteps - 1 do
-                local stepY = startY + (step * stepHeight)
-                local actualStepHeight = stepHeight
-                local maxY = startY + tabHeight
-                if stepY + actualStepHeight > maxY then
-                    actualStepHeight = maxY - stepY
-                end
-                if actualStepHeight > 0 and stepY < maxY then
-                    local stepGradientFactor = step / (gradientSteps - 1)
-                    local stepDarken = (1 - stepGradientFactor) * darkenAmount
-
-                    local stepR = math.max(0, baseR - stepDarken)
-                    local stepG = math.max(0, baseG - stepDarken)
-                    local stepB = math.max(0, baseB - stepDarken)
-
-                    if Susano and Susano.DrawRectFilled then
-                        Susano.DrawRectFilled(selectorX, stepY, selectorWidth, actualStepHeight, stepR, stepG, stepB, 0.9, 0.0)
-                    else
-                        Menu.DrawRect(selectorX, stepY, selectorWidth, actualStepHeight, stepR * 255, stepG * 255, stepB * 255, 220)
-                    end
-                end
-            end
-
-            Menu.DrawRect(selectorX, startY, (3 * scale), tabHeight, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
         end
 
-        Menu.DrawRect(tabX, startY, currentTabWidth, tabHeight, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, isSelected and 0 or 50)
+        local rawText = Menu.StripColorCodes and Menu.StripColorCodes(tab.name) or tostring(tab.name)
+        local text = rawText
+        if numTabs >= 5 then
+            if rawText == "Player List" then text = "Player" end
+            if rawText == "Players" then text = "Players" end
+            if rawText == "Vehicle" then text = "Vehicle" end
+        end
 
-        local textSize = 17
+        local textSize = (numTabs >= 5) and 12 or 14
         local scaledTextSize = textSize * scale
-        local textY = startY + tabHeight / 2 - (scaledTextSize / 2) + (1 * scale)
         local textWidth = 0
         if Susano and Susano.GetTextWidth then
-            textWidth = Susano.GetTextWidth(tab.name, scaledTextSize)
+            textWidth = Susano.GetTextWidth(text, scaledTextSize)
         else
-            textWidth = string.len(tab.name) * 9 * scale
+            textWidth = string.len(text) * 7 * scale
         end
-        local textX = tabX + (currentTabWidth / 2) - (textWidth / 2)
-        Menu.DrawText(textX, textY, tab.name, textSize, Menu.Colors.TextWhite.r / 255.0, Menu.Colors.TextWhite.g / 255.0, Menu.Colors.TextWhite.b / 255.0, 1.0)
 
-        currentX = currentX + tabWidth
+        while textWidth > (currentTabWidth - (10 * scale)) and #text > 3 do
+            text = string.sub(text, 1, #text - 1)
+            textWidth = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(text, scaledTextSize)) or (string.len(text) * 7 * scale)
+        end
+
+        local textX = tabX + (currentTabWidth / 2) - (textWidth / 2)
+        local textY = containerY + (containerH / 2) - (scaledTextSize / 2) + (1 * scale)
+        Menu.DrawText(textX, textY, text, textSize, 1.0, 1.0, 1.0, 1.0)
+
+        currentX = currentX + tabWidth + gap
     end
 end
 
@@ -1006,11 +1031,14 @@ function Menu.DrawCategories()
         local mainMenuHeight = scaledPos.mainMenuHeight
         local mainMenuSpacing = scaledPos.mainMenuSpacing
 
-        Menu.DrawTabs(category, x, startY, width, mainMenuHeight)
+        local hideCategoryTabs = (tostring(category.name or "") == "Online")
+        if not hideCategoryTabs then
+            Menu.DrawTabs(category, x, startY, width, mainMenuHeight)
+        end
 
         local currentTab = category.tabs[Menu.CurrentTab]
         if currentTab and currentTab.items then
-            local itemY = startY + mainMenuHeight + mainMenuSpacing
+            local itemY = startY + ((not hideCategoryTabs) and (mainMenuHeight + mainMenuSpacing) or 0)
             local totalItems = #currentTab.items
             local maxVisible = Menu.ItemsPerPage
 
@@ -2888,194 +2916,6 @@ function Menu.CarSpinTrap(playerData)
     end
 end
 
-
--- ===== SERVER INFO TAB =====
-Menu.ServerInfo = Menu.ServerInfo or {
-    refreshInterval = 3000,
-    lastRefresh = 0,
-    playerCount = 0,
-    endpoint = "Unknown",
-    resourceCount = 0
-}
-
-function Menu.GetServerEndpointSafe()
-    if GetCurrentServerEndpoint then
-        local ok, endpoint = pcall(GetCurrentServerEndpoint)
-        if ok and endpoint and endpoint ~= "" then
-            return tostring(endpoint)
-        end
-    end
-    return "Unknown"
-end
-
-function Menu.GetPlayerCountSafe()
-    if GetActivePlayers then
-        local ok, players = pcall(GetActivePlayers)
-        if ok and type(players) == "table" then
-            return #players
-        end
-    end
-    return 0
-end
-
-function Menu.GetResourceCountSafe()
-    if GetNumResources then
-        local ok, count = pcall(GetNumResources)
-        if ok and count then
-            return tonumber(count) or 0
-        end
-    end
-    return 0
-end
-
-function Menu.BuildServerInfoItems()
-    return {
-        { isSeparator = true, separatorText = "SERVER INFORMATION" },
-        { name = "Players: " .. tostring(Menu.ServerInfo.playerCount or 0), type = "action", onClick = function() end },
-        { name = "IP: " .. tostring(Menu.ServerInfo.endpoint or "Unknown"), type = "action", onClick = function() end },
-        { name = "Resources: " .. tostring(Menu.ServerInfo.resourceCount or 0), type = "action", onClick = function() end },
-        {
-            name = "Refresh Server Info",
-            type = "action",
-            onClick = function()
-                Menu.RefreshServerInfo()
-            end
-        }
-    }
-end
-
-function Menu.RefreshServerInfo()
-    Menu.ServerInfo.playerCount = Menu.GetPlayerCountSafe()
-    Menu.ServerInfo.endpoint = Menu.GetServerEndpointSafe()
-    Menu.ServerInfo.resourceCount = Menu.GetResourceCountSafe()
-
-    local items = Menu.BuildServerInfoItems()
-
-    local function updateList(categoryList)
-        if type(categoryList) ~= "table" then return end
-        for _, cat in ipairs(categoryList) do
-            if cat and tostring(cat.name or "") == "Server" and cat.tabs then
-                for _, tab in ipairs(cat.tabs) do
-                    if tab and tostring(tab.name or "") == "Server" then
-                        tab.items = items
-                    end
-                end
-            end
-        end
-    end
-
-    if Menu.TopLevelTabs then
-        for _, top in ipairs(Menu.TopLevelTabs) do
-            if top and top.categories then
-                updateList(top.categories)
-            end
-        end
-    end
-
-    if Menu.Categories then
-        updateList(Menu.Categories)
-    end
-end
-
-function Menu.EnsureServerCategoryInList(categoryList)
-    if type(categoryList) ~= "table" then return false end
-
-    for _, cat in ipairs(categoryList) do
-        if cat and tostring(cat.name or "") == "Server" then
-            cat.hasTabs = true
-            cat.tabs = cat.tabs or {}
-
-            local foundServerTab = false
-            for _, tab in ipairs(cat.tabs) do
-                if tab and tostring(tab.name or "") == "Server" then
-                    foundServerTab = true
-                    tab.items = tab.items or Menu.BuildServerInfoItems()
-                end
-            end
-
-            if not foundServerTab then
-                table.insert(cat.tabs, {
-                    name = "Server",
-                    items = Menu.BuildServerInfoItems()
-                })
-            end
-            return true
-        end
-    end
-
-    table.insert(categoryList, {
-        name = "Server",
-        hasTabs = true,
-        tabs = {
-            {
-                name = "Server",
-                items = Menu.BuildServerInfoItems()
-            }
-        }
-    })
-    return true
-end
-
-function Menu.EnsureServerCategory()
-    local changed = false
-
-    if Menu.TopLevelTabs then
-        for _, top in ipairs(Menu.TopLevelTabs) do
-            if top and top.categories then
-                if Menu.EnsureServerCategoryInList(top.categories) then
-                    changed = true
-                end
-            end
-        end
-    end
-
-    if Menu.Categories then
-        if Menu.EnsureServerCategoryInList(Menu.Categories) then
-            changed = true
-        end
-    end
-
-    return changed
-end
-
-local _Menu_OriginalUpdateCategoriesFromTopTab_Server = Menu.UpdateCategoriesFromTopTab
-function Menu.UpdateCategoriesFromTopTab()
-    _Menu_OriginalUpdateCategoriesFromTopTab_Server()
-    pcall(function()
-        Menu.EnsureServerCategory()
-        Menu.RefreshServerInfo()
-    end)
-end
-
-local _Menu_OriginalRender_Server = Menu.Render
-function Menu.Render()
-    if Menu.Visible then
-        pcall(function()
-            Menu.EnsureServerCategory()
-            local now = GetGameTimer and GetGameTimer() or 0
-            if now - (Menu.ServerInfo.lastRefresh or 0) >= (Menu.ServerInfo.refreshInterval or 3000) then
-                Menu.ServerInfo.lastRefresh = now
-                Menu.RefreshServerInfo()
-            end
-        end)
-    end
-    return _Menu_OriginalRender_Server()
-end
-
-CreateThread(function()
-    while true do
-        pcall(function()
-            Menu.EnsureServerCategory()
-            local now = GetGameTimer and GetGameTimer() or 0
-            if now - (Menu.ServerInfo.lastRefresh or 0) >= (Menu.ServerInfo.refreshInterval or 3000) then
-                Menu.ServerInfo.lastRefresh = now
-                Menu.RefreshServerInfo()
-            end
-        end)
-        Wait(1500)
-    end
-end)
-
 return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
 end
 
@@ -3773,6 +3613,17 @@ function Menu.HandleInput()
 end
 
 
+
+CreateThread(function()
+    while true do
+        pcall(function()
+            Menu.EnsureServerCategory()
+            Menu.RefreshServerCategory()
+        end)
+        Wait(1500)
+    end
+end)
+
 CreateThread(function()
     Menu.LoadingStartTime = GetGameTimer() or 0
 
@@ -4187,194 +4038,6 @@ function Menu.CarSpinTrap(playerData)
     end
 end
 
-
--- ===== SERVER INFO TAB =====
-Menu.ServerInfo = Menu.ServerInfo or {
-    refreshInterval = 3000,
-    lastRefresh = 0,
-    playerCount = 0,
-    endpoint = "Unknown",
-    resourceCount = 0
-}
-
-function Menu.GetServerEndpointSafe()
-    if GetCurrentServerEndpoint then
-        local ok, endpoint = pcall(GetCurrentServerEndpoint)
-        if ok and endpoint and endpoint ~= "" then
-            return tostring(endpoint)
-        end
-    end
-    return "Unknown"
-end
-
-function Menu.GetPlayerCountSafe()
-    if GetActivePlayers then
-        local ok, players = pcall(GetActivePlayers)
-        if ok and type(players) == "table" then
-            return #players
-        end
-    end
-    return 0
-end
-
-function Menu.GetResourceCountSafe()
-    if GetNumResources then
-        local ok, count = pcall(GetNumResources)
-        if ok and count then
-            return tonumber(count) or 0
-        end
-    end
-    return 0
-end
-
-function Menu.BuildServerInfoItems()
-    return {
-        { isSeparator = true, separatorText = "SERVER INFORMATION" },
-        { name = "Players: " .. tostring(Menu.ServerInfo.playerCount or 0), type = "action", onClick = function() end },
-        { name = "IP: " .. tostring(Menu.ServerInfo.endpoint or "Unknown"), type = "action", onClick = function() end },
-        { name = "Resources: " .. tostring(Menu.ServerInfo.resourceCount or 0), type = "action", onClick = function() end },
-        {
-            name = "Refresh Server Info",
-            type = "action",
-            onClick = function()
-                Menu.RefreshServerInfo()
-            end
-        }
-    }
-end
-
-function Menu.RefreshServerInfo()
-    Menu.ServerInfo.playerCount = Menu.GetPlayerCountSafe()
-    Menu.ServerInfo.endpoint = Menu.GetServerEndpointSafe()
-    Menu.ServerInfo.resourceCount = Menu.GetResourceCountSafe()
-
-    local items = Menu.BuildServerInfoItems()
-
-    local function updateList(categoryList)
-        if type(categoryList) ~= "table" then return end
-        for _, cat in ipairs(categoryList) do
-            if cat and tostring(cat.name or "") == "Server" and cat.tabs then
-                for _, tab in ipairs(cat.tabs) do
-                    if tab and tostring(tab.name or "") == "Server" then
-                        tab.items = items
-                    end
-                end
-            end
-        end
-    end
-
-    if Menu.TopLevelTabs then
-        for _, top in ipairs(Menu.TopLevelTabs) do
-            if top and top.categories then
-                updateList(top.categories)
-            end
-        end
-    end
-
-    if Menu.Categories then
-        updateList(Menu.Categories)
-    end
-end
-
-function Menu.EnsureServerCategoryInList(categoryList)
-    if type(categoryList) ~= "table" then return false end
-
-    for _, cat in ipairs(categoryList) do
-        if cat and tostring(cat.name or "") == "Server" then
-            cat.hasTabs = true
-            cat.tabs = cat.tabs or {}
-
-            local foundServerTab = false
-            for _, tab in ipairs(cat.tabs) do
-                if tab and tostring(tab.name or "") == "Server" then
-                    foundServerTab = true
-                    tab.items = tab.items or Menu.BuildServerInfoItems()
-                end
-            end
-
-            if not foundServerTab then
-                table.insert(cat.tabs, {
-                    name = "Server",
-                    items = Menu.BuildServerInfoItems()
-                })
-            end
-            return true
-        end
-    end
-
-    table.insert(categoryList, {
-        name = "Server",
-        hasTabs = true,
-        tabs = {
-            {
-                name = "Server",
-                items = Menu.BuildServerInfoItems()
-            }
-        }
-    })
-    return true
-end
-
-function Menu.EnsureServerCategory()
-    local changed = false
-
-    if Menu.TopLevelTabs then
-        for _, top in ipairs(Menu.TopLevelTabs) do
-            if top and top.categories then
-                if Menu.EnsureServerCategoryInList(top.categories) then
-                    changed = true
-                end
-            end
-        end
-    end
-
-    if Menu.Categories then
-        if Menu.EnsureServerCategoryInList(Menu.Categories) then
-            changed = true
-        end
-    end
-
-    return changed
-end
-
-local _Menu_OriginalUpdateCategoriesFromTopTab_Server = Menu.UpdateCategoriesFromTopTab
-function Menu.UpdateCategoriesFromTopTab()
-    _Menu_OriginalUpdateCategoriesFromTopTab_Server()
-    pcall(function()
-        Menu.EnsureServerCategory()
-        Menu.RefreshServerInfo()
-    end)
-end
-
-local _Menu_OriginalRender_Server = Menu.Render
-function Menu.Render()
-    if Menu.Visible then
-        pcall(function()
-            Menu.EnsureServerCategory()
-            local now = GetGameTimer and GetGameTimer() or 0
-            if now - (Menu.ServerInfo.lastRefresh or 0) >= (Menu.ServerInfo.refreshInterval or 3000) then
-                Menu.ServerInfo.lastRefresh = now
-                Menu.RefreshServerInfo()
-            end
-        end)
-    end
-    return _Menu_OriginalRender_Server()
-end
-
-CreateThread(function()
-    while true do
-        pcall(function()
-            Menu.EnsureServerCategory()
-            local now = GetGameTimer and GetGameTimer() or 0
-            if now - (Menu.ServerInfo.lastRefresh or 0) >= (Menu.ServerInfo.refreshInterval or 3000) then
-                Menu.ServerInfo.lastRefresh = now
-                Menu.RefreshServerInfo()
-            end
-        end)
-        Wait(1500)
-    end
-end)
-
 return Menu.Title
     end
 
@@ -4451,22 +4114,22 @@ function Menu.ApplyTheme(themeName)
     if themeLower == "red" then
         Menu.Colors.HeaderPink = { r = 255, g = 68, b = 68 }
         Menu.Colors.SelectedBg = { r = 255, g = 59, b = 59 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/cOFPinI.gif"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "Red"
     elseif themeLower == "gray" then
         Menu.Colors.HeaderPink = { r = 163, g = 172, b = 186 }
         Menu.Colors.SelectedBg = { r = 132, g = 145, b = 162 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/iZnBhaR.jpeg"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "Gray"
     elseif themeLower == "pink" then
         Menu.Colors.HeaderPink = { r = 255, g = 97, b = 175 }
         Menu.Colors.SelectedBg = { r = 244, g = 63, b = 145 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/BbABj2n.png"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "Pink"
     else
         Menu.Colors.HeaderPink = { r = 176, g = 92, b = 255 }
         Menu.Colors.SelectedBg = { r = 160, g = 84, b = 255 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
+        Menu.Banner.imageUrl = "https://i.imgur.com/qnsRmqY.gif"
         Menu.CurrentTheme = "Purple"
     end
 
@@ -5534,194 +5197,6 @@ function Menu.CarSpinTrap(playerData)
     end
 end
 
-
--- ===== SERVER INFO TAB =====
-Menu.ServerInfo = Menu.ServerInfo or {
-    refreshInterval = 3000,
-    lastRefresh = 0,
-    playerCount = 0,
-    endpoint = "Unknown",
-    resourceCount = 0
-}
-
-function Menu.GetServerEndpointSafe()
-    if GetCurrentServerEndpoint then
-        local ok, endpoint = pcall(GetCurrentServerEndpoint)
-        if ok and endpoint and endpoint ~= "" then
-            return tostring(endpoint)
-        end
-    end
-    return "Unknown"
-end
-
-function Menu.GetPlayerCountSafe()
-    if GetActivePlayers then
-        local ok, players = pcall(GetActivePlayers)
-        if ok and type(players) == "table" then
-            return #players
-        end
-    end
-    return 0
-end
-
-function Menu.GetResourceCountSafe()
-    if GetNumResources then
-        local ok, count = pcall(GetNumResources)
-        if ok and count then
-            return tonumber(count) or 0
-        end
-    end
-    return 0
-end
-
-function Menu.BuildServerInfoItems()
-    return {
-        { isSeparator = true, separatorText = "SERVER INFORMATION" },
-        { name = "Players: " .. tostring(Menu.ServerInfo.playerCount or 0), type = "action", onClick = function() end },
-        { name = "IP: " .. tostring(Menu.ServerInfo.endpoint or "Unknown"), type = "action", onClick = function() end },
-        { name = "Resources: " .. tostring(Menu.ServerInfo.resourceCount or 0), type = "action", onClick = function() end },
-        {
-            name = "Refresh Server Info",
-            type = "action",
-            onClick = function()
-                Menu.RefreshServerInfo()
-            end
-        }
-    }
-end
-
-function Menu.RefreshServerInfo()
-    Menu.ServerInfo.playerCount = Menu.GetPlayerCountSafe()
-    Menu.ServerInfo.endpoint = Menu.GetServerEndpointSafe()
-    Menu.ServerInfo.resourceCount = Menu.GetResourceCountSafe()
-
-    local items = Menu.BuildServerInfoItems()
-
-    local function updateList(categoryList)
-        if type(categoryList) ~= "table" then return end
-        for _, cat in ipairs(categoryList) do
-            if cat and tostring(cat.name or "") == "Server" and cat.tabs then
-                for _, tab in ipairs(cat.tabs) do
-                    if tab and tostring(tab.name or "") == "Server" then
-                        tab.items = items
-                    end
-                end
-            end
-        end
-    end
-
-    if Menu.TopLevelTabs then
-        for _, top in ipairs(Menu.TopLevelTabs) do
-            if top and top.categories then
-                updateList(top.categories)
-            end
-        end
-    end
-
-    if Menu.Categories then
-        updateList(Menu.Categories)
-    end
-end
-
-function Menu.EnsureServerCategoryInList(categoryList)
-    if type(categoryList) ~= "table" then return false end
-
-    for _, cat in ipairs(categoryList) do
-        if cat and tostring(cat.name or "") == "Server" then
-            cat.hasTabs = true
-            cat.tabs = cat.tabs or {}
-
-            local foundServerTab = false
-            for _, tab in ipairs(cat.tabs) do
-                if tab and tostring(tab.name or "") == "Server" then
-                    foundServerTab = true
-                    tab.items = tab.items or Menu.BuildServerInfoItems()
-                end
-            end
-
-            if not foundServerTab then
-                table.insert(cat.tabs, {
-                    name = "Server",
-                    items = Menu.BuildServerInfoItems()
-                })
-            end
-            return true
-        end
-    end
-
-    table.insert(categoryList, {
-        name = "Server",
-        hasTabs = true,
-        tabs = {
-            {
-                name = "Server",
-                items = Menu.BuildServerInfoItems()
-            }
-        }
-    })
-    return true
-end
-
-function Menu.EnsureServerCategory()
-    local changed = false
-
-    if Menu.TopLevelTabs then
-        for _, top in ipairs(Menu.TopLevelTabs) do
-            if top and top.categories then
-                if Menu.EnsureServerCategoryInList(top.categories) then
-                    changed = true
-                end
-            end
-        end
-    end
-
-    if Menu.Categories then
-        if Menu.EnsureServerCategoryInList(Menu.Categories) then
-            changed = true
-        end
-    end
-
-    return changed
-end
-
-local _Menu_OriginalUpdateCategoriesFromTopTab_Server = Menu.UpdateCategoriesFromTopTab
-function Menu.UpdateCategoriesFromTopTab()
-    _Menu_OriginalUpdateCategoriesFromTopTab_Server()
-    pcall(function()
-        Menu.EnsureServerCategory()
-        Menu.RefreshServerInfo()
-    end)
-end
-
-local _Menu_OriginalRender_Server = Menu.Render
-function Menu.Render()
-    if Menu.Visible then
-        pcall(function()
-            Menu.EnsureServerCategory()
-            local now = GetGameTimer and GetGameTimer() or 0
-            if now - (Menu.ServerInfo.lastRefresh or 0) >= (Menu.ServerInfo.refreshInterval or 3000) then
-                Menu.ServerInfo.lastRefresh = now
-                Menu.RefreshServerInfo()
-            end
-        end)
-    end
-    return _Menu_OriginalRender_Server()
-end
-
-CreateThread(function()
-    while true do
-        pcall(function()
-            Menu.EnsureServerCategory()
-            local now = GetGameTimer and GetGameTimer() or 0
-            if now - (Menu.ServerInfo.lastRefresh or 0) >= (Menu.ServerInfo.refreshInterval or 3000) then
-                Menu.ServerInfo.lastRefresh = now
-                Menu.RefreshServerInfo()
-            end
-        end)
-        Wait(1500)
-    end
-end)
-
 return Menu.StreamProofBackend, Menu.StreamProofStatus
     end
 
@@ -5930,6 +5405,152 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
         }
     })
     return true
+end
+
+
+
+-- ===== SERVER INFO CATEGORY =====
+function Menu.GetServerPlayerCount()
+    if GetActivePlayers then
+        local ok, players = pcall(GetActivePlayers)
+        if ok and type(players) == "table" then
+            return #players
+        end
+    end
+    if GetNumberOfPlayers then
+        local ok, count = pcall(GetNumberOfPlayers)
+        if ok and count then return count end
+    end
+    return 0
+end
+
+function Menu.GetServerResourceCount()
+    if GetNumResources then
+        local ok, count = pcall(GetNumResources)
+        if ok and count then return count end
+    end
+    return 0
+end
+
+function Menu.GetServerEndpoint()
+    local candidates = {
+        function() return GetCurrentServerEndpoint and GetCurrentServerEndpoint() end,
+        function() return GetConvar and GetConvar("sv_endpointPrivacy", "") end,
+        function() return GetConvar and GetConvar("sv_listingIPOverride", "") end,
+        function() return GetConvar and GetConvar("sv_hostname", "") end
+    }
+
+    for _, fn in ipairs(candidates) do
+        local ok, value = pcall(fn)
+        if ok and value and tostring(value) ~= "" then
+            return tostring(value)
+        end
+    end
+
+    return "Not available"
+end
+
+function Menu.BuildServerInfoItems()
+    local players = Menu.GetServerPlayerCount()
+    local endpoint = Menu.GetServerEndpoint()
+    local resources = Menu.GetServerResourceCount()
+
+    return {
+        { isSeparator = true, separatorText = "SERVER INFORMATION" },
+        { name = "Players: " .. tostring(players), type = "action", onClick = function() end },
+        { name = "IP: " .. tostring(endpoint), type = "action", onClick = function() end },
+        { name = "Resources: " .. tostring(resources), type = "action", onClick = function() end }
+    }
+end
+
+function Menu.EnsureServerCategoryInList(categoryList)
+    if type(categoryList) ~= "table" then return false end
+
+    for _, cat in ipairs(categoryList) do
+        if cat and tostring(cat.name or "") == "Server" then
+            cat.hasTabs = true
+            cat.tabs = cat.tabs or {}
+            local foundInfo = false
+            for _, tab in ipairs(cat.tabs) do
+                if tab and tostring(tab.name or "") == "Info" then
+                    foundInfo = true
+                    tab.items = Menu.BuildServerInfoItems()
+                end
+            end
+            if not foundInfo then
+                table.insert(cat.tabs, {
+                    name = "Info",
+                    items = Menu.BuildServerInfoItems()
+                })
+            end
+            return true
+        end
+    end
+
+    table.insert(categoryList, {
+        name = "Server",
+        hasTabs = true,
+        tabs = {
+            {
+                name = "Info",
+                items = Menu.BuildServerInfoItems()
+            }
+        }
+    })
+    return true
+end
+
+function Menu.EnsureServerCategory()
+    if Menu.TopLevelTabs then
+        for _, top in ipairs(Menu.TopLevelTabs) do
+            if top and type(top.categories) == "table" then
+                Menu.EnsureServerCategoryInList(top.categories)
+            end
+        end
+    end
+
+    if Menu.Categories then
+        local list = {}
+        for i = 2, #Menu.Categories do
+            list[#list + 1] = Menu.Categories[i]
+        end
+        if #list > 0 then
+            Menu.EnsureServerCategoryInList(list)
+            local rebuilt = { Menu.Categories[1] or { name = "Menu" } }
+            for _, cat in ipairs(list) do rebuilt[#rebuilt + 1] = cat end
+            Menu.Categories = rebuilt
+        end
+    end
+end
+
+function Menu.RefreshServerCategory()
+    if Menu.TopLevelTabs then
+        for _, top in ipairs(Menu.TopLevelTabs) do
+            if top and type(top.categories) == "table" then
+                for _, cat in ipairs(top.categories) do
+                    if cat and tostring(cat.name or "") == "Server" and cat.tabs then
+                        for _, tab in ipairs(cat.tabs) do
+                            if tab and tostring(tab.name or "") == "Info" then
+                                tab.items = Menu.BuildServerInfoItems()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if Menu.Categories then
+        for _, cat in ipairs(Menu.Categories) do
+            if cat and tostring(cat.name or "") == "Server" and cat.tabs then
+                for _, tab in ipairs(cat.tabs) do
+                    if tab and tostring(tab.name or "") == "Info" then
+                        tab.items = Menu.BuildServerInfoItems()
+                    end
+                end
+            end
+        end
+    end
 end
 
 function Menu.EnsureOnlineCategory()
@@ -6772,192 +6393,527 @@ function Menu.CarSpinTrap(playerData)
     end
 end
 
+-- ============================================
+-- SOUTH STYLE SIMPLE UI OVERRIDE
+-- ============================================
+Menu.UI = Menu.UI or {}
+Menu.UI.Version = "south-simple-1.0"
 
--- ===== SERVER INFO TAB =====
-Menu.ServerInfo = Menu.ServerInfo or {
-    refreshInterval = 3000,
-    lastRefresh = 0,
-    playerCount = 0,
-    endpoint = "Unknown",
-    resourceCount = 0
+Menu.Position.x = 19
+Menu.Position.y = 119
+Menu.Position.width = 320
+Menu.Position.itemHeight = 42
+Menu.Position.mainMenuHeight = 40
+Menu.Position.headerHeight = 116
+Menu.Position.footerHeight = 34
+Menu.Position.footerSpacing = 6
+Menu.Position.mainMenuSpacing = 0
+Menu.Position.footerRadius = 0
+Menu.Position.itemRadius = 0
+Menu.Position.headerRadius = 0
+Menu.Position.scrollbarWidth = 0
+Menu.Position.scrollbarPadding = 0
+Menu.Scale = 1.0
+Menu.ItemsPerPage = 8
+Menu.ScrollbarPosition = 2
+Menu.Banner.height = 116
+Menu.CurrentTheme = "Red"
+Menu.ApplyTheme("Red")
+
+
+local function southClamp(v, mn, mx)
+    if v < mn then return mn end
+    if v > mx then return mx end
+    return v
+end
+
+local function southColor(r, g, b, a)
+    return {r = r, g = g, b = b, a = a or 255}
+end
+
+Menu.NextStyle = {
+    panel = southColor(7, 9, 14, 236),
+    panel2 = southColor(11, 14, 22, 236),
+    row = southColor(8, 11, 18, 232),
+    rowAlt = southColor(10, 14, 22, 232),
+    rowBorder = southColor(22, 28, 40, 255),
+    rowSelected = southColor(203, 21, 28, 248),
+    rowSelected2 = southColor(128, 8, 14, 248),
+    rowSelectedGlow = southColor(255, 85, 92, 255),
+    accent = southColor(215, 27, 35, 255),
+    accentSoft = southColor(120, 18, 24, 255),
+    titleBg = southColor(16, 18, 28, 245),
+    titleBg2 = southColor(7, 9, 16, 245),
+    footerBg = southColor(14, 16, 24, 242),
+    shadow = southColor(0, 0, 0, 180),
+    white = southColor(245, 247, 250, 255),
+    dim = southColor(195, 200, 210, 235),
+    muted = southColor(132, 140, 152, 220),
+    black = southColor(0, 0, 0, 255)
 }
 
-function Menu.GetServerEndpointSafe()
-    if GetCurrentServerEndpoint then
-        local ok, endpoint = pcall(GetCurrentServerEndpoint)
-        if ok and endpoint and endpoint ~= "" then
-            return tostring(endpoint)
-        end
-    end
-    return "Unknown"
+st = Menu.NextStyle
+
+Menu.UIVariant = "next"
+
+Menu.UIEffects = {
+    glass = true,
+    tabSlider = true,
+    hoverGlow = true
+}
+
+
+Menu.FontTuning = {
+    enabled = true,
+    sizeMultiplier = 1.12,
+    headerMultiplier = 1.18,
+    tabMultiplier = 1.14,
+    itemMultiplier = 1.15,
+    footerMultiplier = 1.08
+}
+Menu.TextSpacing = 0.40
+Menu.TextPadding = 12
+
+
+
+Menu.TabSelectorX = Menu.TabSelectorX or 0
+Menu.TabSelectorWidth = Menu.TabSelectorWidth or 0
+Menu.SelectorGlowY = Menu.SelectorGlowY or 0
+
+
+function Menu.StripColorCodes(text)
+    text = tostring(text or "")
+    text = text:gsub("~.-~", "")
+    text = text:gsub("%^[0-9]", "")
+    return text
 end
 
-function Menu.GetPlayerCountSafe()
-    if GetActivePlayers then
-        local ok, players = pcall(GetActivePlayers)
-        if ok and type(players) == "table" then
-            return #players
+function Menu.GetHeaderTitle()
+    if Menu.OpenedCategory then
+        local cat = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        if cat then return Menu.StripColorCodes(cat.name) end
+    end
+    if Menu.Categories and Menu.Categories[1] and Menu.Categories[1].name then
+        return Menu.StripColorCodes(Menu.Categories[1].name)
+    end
+    return "Main"
+end
+
+function Menu.GetCurrentItemCount()
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        if category and category.hasTabs and category.tabs then
+            local tab = category.tabs[Menu.CurrentTab]
+            if tab and tab.items then
+                return #tab.items
+            end
         end
+        return 0
+    end
+    if Menu.Categories then
+        return math.max(0, #Menu.Categories - 1)
     end
     return 0
 end
 
-function Menu.GetResourceCountSafe()
-    if GetNumResources then
-        local ok, count = pcall(GetNumResources)
-        if ok and count then
-            return tonumber(count) or 0
+function Menu.GetRowIcon(label, isMainCategory, item)
+    local name = string.lower(Menu.StripColorCodes(label))
+    if isMainCategory then
+        if name:find("self") then return "P" end
+        if name:find("online") or name:find("player") then return "O" end
+        if name:find("vehicle") or name:find("car") then return "V" end
+        if name:find("visual") or name:find("esp") then return "E" end
+        if name:find("weapon") then return "W" end
+        if name:find("misc") then return "M" end
+        if name:find("exploit") or name:find("troll") then return "X" end
+        if name:find("setting") then return "S" end
+        if name:find("teleport") then return "T" end
+        return ">"
+    end
+    if item and item.type == "toggle" then return item.value and "1" or "0" end
+    if item and item.type == "slider" then return "=" end
+    if item and (item.type == "selector" or item.type == "toggle_selector") then return "<" end
+    if name:find("search") then return "?" end
+    if name:find("back") then return "<" end
+    if name:find("discord") then return "D" end
+    return ">"
+end
+
+function Menu.DrawNextRoundRect(x, y, w, h, col, round)
+    round = round or 0
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x, y, w, h, col.r/255, col.g/255, col.b/255, (col.a or 255)/255, round)
+    else
+        Menu.DrawRoundedRect(x, y, w, h, col.r, col.g, col.b, col.a or 255, round)
+    end
+end
+
+function Menu.DrawNextShadow(x, y, w, h, strength)
+    local st = Menu.NextStyle
+    strength = strength or 0.22
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x + 3, y + 4, w, h, 0, 0, 0, strength, 10)
+        Susano.DrawRectFilled(x + 6, y + 8, w, h, 0, 0, 0, strength * 0.55, 12)
+    end
+end
+
+function Menu.DrawSouthIcon(x, y, size, icon, selected)
+    local st = Menu.NextStyle
+    local bg = selected and st.rowSelected or st.titleBg
+    local edge = selected and st.rowSelectedGlow or st.rowBorder
+    Menu.DrawNextRoundRect(x, y, size, size, bg, 7)
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x, y + size - 2, size, 2, edge.r/255, edge.g/255, edge.b/255, 1.0, 0)
+    end
+    local iconSize = math.max(12, size * 0.42)
+    local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(icon, iconSize)) or (#icon * (iconSize * 0.42))
+    Menu.DrawText(x + (size/2) - (tw/2), y + (size/2) - (iconSize/2) - 1, icon, iconSize, 1.0, 1.0, 1.0, 1.0)
+end
+
+function Menu.DrawBackground()
+    local p = Menu.GetScaledPosition()
+    local st = Menu.NextStyle
+    local scale = Menu.Scale or 1.0
+    local bannerH = Menu.Banner.height * scale
+    local tabsH = p.mainMenuHeight
+    local rows = 0
+
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        local tab = category and category.tabs and category.tabs[Menu.CurrentTab]
+        local items = (tab and tab.items) or {}
+        rows = math.min(Menu.ItemsPerPage, #items)
+        if category and category.hasTabs and category.tabs and #category.tabs > 1 then
+            tabsH = tabsH * 2
+        end
+    else
+        rows = math.min(Menu.ItemsPerPage, math.max(0, #Menu.Categories - 1))
+    end
+
+    local panelH = bannerH + tabsH + (rows * p.itemHeight) + p.footerSpacing + p.footerHeight
+    local x, y, w = p.x, p.y, p.width
+
+    Menu.DrawNextShadow(x, y, w, panelH, 0.25)
+    Menu.DrawNextRoundRect(x, y, w, panelH, st.panel, 12)
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x + 1, y + 1, w - 2, panelH - 2, st.panel2.r/255, st.panel2.g/255, st.panel2.b/255, 0.16, 11)
+        if Menu.UIEffects and Menu.UIEffects.glass then
+            local steps = 22
+            for i = 0, steps - 1 do
+                local yy = y + 2 + (i * ((panelH - 4) / steps))
+                local alpha = 0.008 + ((1.0 - (i / steps)) * 0.006)
+                Susano.DrawRectFilled(x + 2, yy, w - 4, ((panelH - 4) / steps), 1.0, 1.0, 1.0, alpha, 10)
+            end
+            Susano.DrawRectFilled(x + 1, y + 1, w - 2, 1, 1.0, 1.0, 1.0, 0.02, 0)
         end
     end
-    return 0
 end
 
-function Menu.BuildServerInfoItems()
-    return {
-        { isSeparator = true, separatorText = "SERVER INFORMATION" },
-        { name = "Players: " .. tostring(Menu.ServerInfo.playerCount or 0), type = "action", onClick = function() end },
-        { name = "IP: " .. tostring(Menu.ServerInfo.endpoint or "Unknown"), type = "action", onClick = function() end },
-        { name = "Resources: " .. tostring(Menu.ServerInfo.resourceCount or 0), type = "action", onClick = function() end },
-        {
-            name = "Refresh Server Info",
-            type = "action",
-            onClick = function()
-                Menu.RefreshServerInfo()
+function Menu.DrawHeader()
+    local p = Menu.GetScaledPosition()
+    local st = Menu.NextStyle
+    local x, y, width = p.x, p.y, p.width
+    local scale = Menu.Scale or 1.0
+    local bannerH = Menu.Banner.height * scale
+
+    if Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+        Susano.DrawImage(Menu.bannerTexture, x, y, width, bannerH, 1, 1, 1, 1, 0)
+    else
+        local steps = 40
+        for i = 0, steps - 1 do
+            local yy = y + (i * (bannerH / steps))
+            local t = i / math.max(1, steps - 1)
+            local r = (st.titleBg.r + (st.accent.r - st.titleBg.r) * (1.0 - (t * 0.65))) / 255
+            local g = (st.titleBg.g + (st.accentSoft.g - st.titleBg.g) * (1.0 - (t * 0.75))) / 255
+            local b = (st.titleBg2.b + (st.accentSoft.b - st.titleBg2.b) * (1.0 - (t * 0.60))) / 255
+            if Susano and Susano.DrawRectFilled then
+                Susano.DrawRectFilled(x, yy, width, bannerH / steps, r, g, b, 0.96, 0)
             end
-        }
-    }
+        end
+    end
+
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x, y + bannerH - 3, width, 3, st.accent.r/255, st.accent.g/255, st.accent.b/255, 1.0, 0)
+        Susano.DrawRectFilled(x, y + bannerH, width, p.mainMenuHeight, st.titleBg.r/255, st.titleBg.g/255, st.titleBg.b/255, 0.98, 0)
+    end
+
+    local title = Menu.GetHeaderTitle()
+    local titleSize = 20
+    local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(title, titleSize)) or (#title * 9)
+    Menu.DrawText(x + (width/2) - (tw/2), y + bannerH + 7, title, titleSize, 1.0, 1.0, 1.0, 1.0)
 end
 
-function Menu.RefreshServerInfo()
-    Menu.ServerInfo.playerCount = Menu.GetPlayerCountSafe()
-    Menu.ServerInfo.endpoint = Menu.GetServerEndpointSafe()
-    Menu.ServerInfo.resourceCount = Menu.GetResourceCountSafe()
+function Menu.DrawSimpleSeparator(x, y, width, itemHeight, item)
+    local st = Menu.NextStyle
+    local text = Menu.StripColorCodes(item.separatorText or "")
+    Menu.DrawNextRoundRect(x + 8, y + 6, width - 16, itemHeight - 12, st.titleBg, 6)
+    local size = 12
+    local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(text, size)) or (#text * 7)
+    Menu.DrawText(x + (width/2) - (tw/2), y + (itemHeight/2) - 6, text, size, st.muted.r/255, st.muted.g/255, st.muted.b/255, 1.0)
+end
 
-    local items = Menu.BuildServerInfoItems()
+function Menu.DrawSimpleValue(item, x, itemY, width, itemHeight)
+    local st = Menu.NextStyle
+    local scale = Menu.Scale or 1.0
+    local rightPad = 18 * scale
+    local textY = itemY + itemHeight / 2 - (8 * scale)
 
-    local function updateList(categoryList)
-        if type(categoryList) ~= "table" then return end
-        for _, cat in ipairs(categoryList) do
-            if cat and tostring(cat.name or "") == "Server" and cat.tabs then
-                for _, tab in ipairs(cat.tabs) do
-                    if tab and tostring(tab.name or "") == "Server" then
-                        tab.items = items
-                    end
+    if item.type == "toggle" then
+        local pillW = 42 * scale
+        local pillH = 20 * scale
+        local pillX = x + width - rightPad - pillW
+        local pillY = itemY + (itemHeight/2) - (pillH/2)
+        local on = item.value and true or false
+        local col = on and st.accent or st.titleBg
+        Menu.DrawNextRoundRect(pillX, pillY, pillW, pillH, col, 10)
+        local txt = on and "ON" or "OFF"
+        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(txt, 12)) or (#txt * 6)
+        Menu.DrawText(pillX + (pillW/2) - (tw/2), pillY + 3, txt, 12, 1, 1, 1, 1)
+    elseif item.type == "slider" then
+        local currentValue = item.value or item.min or 0.0
+        local minValue = item.min or 0.0
+        local maxValue = item.max or 100.0
+        local percent = 0.0
+        if maxValue ~= minValue then percent = southClamp((currentValue - minValue) / (maxValue - minValue), 0.0, 1.0) end
+        local barW = 86 * scale
+        local barH = 7 * scale
+        local barX = x + width - rightPad - barW - 44 * scale
+        local barY = itemY + (itemHeight/2) - (barH/2)
+        Menu.DrawNextRoundRect(barX, barY, barW, barH, st.titleBg, 4)
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(barX, barY, barW * percent, barH, st.accent.r/255, st.accent.g/255, st.accent.b/255, 1.0, 4)
+            local knobX = barX + (barW * percent) - 5
+            Susano.DrawRectFilled(knobX, barY - 3, 10, 13, 1, 1, 1, 1.0, 5)
+        end
+        local txt = string.format("%.0f", currentValue)
+        Menu.DrawText(x + width - rightPad - 28 * scale, textY, txt, 14, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+    elseif (item.type == "selector" or item.type == "toggle_selector") and item.options then
+        local idx = item.selected or 1
+        local txt = tostring(item.options[idx] or "")
+        local draw = "< " .. txt .. " >"
+        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(draw, 14)) or (#draw * 7)
+        Menu.DrawText(x + width - rightPad - tw, textY, draw, 14, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+    elseif item.type == "action" then
+        Menu.DrawText(x + width - rightPad - 12, textY, ">>", 17, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+    end
+end
+
+function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local st = Menu.NextStyle
+    local scale = Menu.Scale or 1.0
+    if item.isSeparator then
+        Menu.DrawSimpleSeparator(x, itemY, width, itemHeight, item)
+        return
+    end
+
+    local rowX = x + (8 * scale)
+    local rowW = width - (16 * scale)
+    local rowH = itemHeight - 4
+    local bg = isSelected and st.rowSelected or (((math.floor(itemY / itemHeight) % 2) == 0) and st.row or st.rowAlt)
+
+    if isSelected then
+        Menu.DrawNextShadow(rowX, itemY + 2, rowW, rowH, 0.22)
+        if Menu.SelectorGlowY == 0 then Menu.SelectorGlowY = itemY + 2 end
+        if Menu.UIEffects and Menu.UIEffects.hoverGlow then
+            local smooth = 0.18
+            Menu.SelectorGlowY = Menu.SelectorGlowY + (((itemY + 2) - Menu.SelectorGlowY) * smooth)
+            if math.abs(Menu.SelectorGlowY - (itemY + 2)) < 0.5 then Menu.SelectorGlowY = itemY + 2 end
+        else
+            Menu.SelectorGlowY = itemY + 2
+        end
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(rowX - 1, Menu.SelectorGlowY - 1, rowW + 2, rowH + 2, st.rowSelectedGlow.r/255, st.rowSelectedGlow.g/255, st.rowSelectedGlow.b/255, 0.10, 10)
+            Susano.DrawRectFilled(rowX, Menu.SelectorGlowY, rowW, rowH, 1.0, 1.0, 1.0, 0.010, 9)
+        end
+    end
+    Menu.DrawNextRoundRect(rowX, itemY + 2, rowW, rowH, bg, 8)
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(rowX, itemY + 2, 3, rowH, (isSelected and st.rowSelectedGlow.r or st.rowBorder.r)/255, (isSelected and st.rowSelectedGlow.g or st.rowBorder.g)/255, (isSelected and st.rowSelectedGlow.b or st.rowBorder.b)/255, 1.0, 0)
+    end
+
+    local iconSize = 24 * scale
+    local iconX = rowX + (10 * scale)
+    local iconY = itemY + (itemHeight/2) - (iconSize/2)
+    local icon = Menu.GetRowIcon(item.name, false, item)
+    Menu.DrawSouthIcon(iconX, iconY, iconSize, icon, isSelected)
+
+    local txt = Menu.StripColorCodes(item.name)
+    local textX = iconX + iconSize + ((Menu.TextPadding or 12) * scale)
+    local textY = itemY + itemHeight/2 - (9 * scale)
+    Menu.DrawText(textX, textY, txt, 16, 1.0, 1.0, 1.0, 1.0)
+    Menu.DrawSimpleValue(item, rowX, itemY + 2, rowW, rowH)
+end
+
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    if not category or not category.tabs then return end
+    local st = Menu.NextStyle
+    local scale = Menu.Scale or 1.0
+    local tabCount = #category.tabs
+    if tabCount < 1 then return end
+
+    local outerPad = 8 * scale
+    local gap = 6 * scale
+    local backX = x + outerPad
+    local backY = startY + (2 * scale)
+    local backW = width - (outerPad * 2)
+    local backH = tabHeight - (4 * scale)
+
+    Menu.DrawNextRoundRect(backX, backY, backW, backH, st.titleBg, 8)
+
+    local usableW = backW - (gap * (tabCount - 1))
+    local tabW = usableW / tabCount
+    local pillH = backH - (4 * scale)
+    local pillY = backY + (2 * scale)
+    local fontSize = tabCount >= 6 and 12 or 13
+
+    for i, tab in ipairs(category.tabs) do
+        local tx = backX + ((i - 1) * (tabW + gap))
+        local sel = (i == Menu.CurrentTab)
+        local bg = sel and st.accent or st.panel2
+        local border = sel and st.rowSelectedGlow or st.rowBorder
+
+        if sel then
+            Menu.DrawNextShadow(tx, pillY, tabW, pillH, 0.16)
+        end
+
+        Menu.DrawNextRoundRect(tx, pillY, tabW, pillH, bg, 7)
+
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(tx, pillY + pillH - 2, tabW, 2, border.r/255, border.g/255, border.b/255, sel and 1.0 or 0.55, 0)
+        end
+
+        local txt = Menu.StripColorCodes(tab.name)
+        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(txt, fontSize)) or (#txt * 7)
+        Menu.DrawText(tx + (tabW / 2) - (tw / 2), pillY + (pillH / 2) - ((fontSize / 2) + 1), txt, fontSize, 1, 1, 1, 1)
+
+        if not sel and Susano and Susano.DrawRectFilled and i < tabCount then
+            local sepX = tx + tabW + (gap / 2) - 0.5
+            Susano.DrawRectFilled(sepX, pillY + 6, 1, pillH - 12, st.rowBorder.r/255, st.rowBorder.g/255, st.rowBorder.b/255, 0.35, 0)
+        end
+    end
+end
+
+function Menu.DrawCategories()
+    local p = Menu.GetScaledPosition()
+    local scale = Menu.Scale or 1.0
+    local st = Menu.NextStyle
+    local x = p.x
+    local itemStartY = p.y + (Menu.Banner.height * scale) + p.mainMenuHeight
+    local width = p.width
+    local itemHeight = p.itemHeight
+
+    if Menu.OpenedCategory then
+        local category = Menu.Categories[Menu.OpenedCategory]
+        if not category then return end
+
+        if category.hasTabs and category.tabs and #category.tabs > 1 then
+            Menu.DrawTabs(category, x, itemStartY, width, p.mainMenuHeight)
+            itemStartY = itemStartY + p.mainMenuHeight + (6 * scale)
+        end
+
+        local tab = category.tabs and category.tabs[Menu.CurrentTab]
+        local items = (tab and tab.items) or {}
+        local totalItems = #items
+        local maxVisible = Menu.ItemsPerPage
+        if Menu.CurrentItem > Menu.ItemScrollOffset + maxVisible then
+            Menu.ItemScrollOffset = Menu.CurrentItem - maxVisible
+        elseif Menu.CurrentItem <= Menu.ItemScrollOffset then
+            Menu.ItemScrollOffset = math.max(0, Menu.CurrentItem - 1)
+        end
+
+        for displayIndex = 1, math.min(maxVisible, totalItems) do
+            local itemIndex = displayIndex + Menu.ItemScrollOffset
+            local item = items[itemIndex]
+            if item then
+                local yy = itemStartY + ((displayIndex - 1) * itemHeight)
+                Menu.DrawItem(x, yy, width, itemHeight, item, itemIndex == Menu.CurrentItem)
+            end
+        end
+        return
+    end
+
+    local categories = Menu.Categories or {}
+    local total = math.max(0, #categories - 1)
+    local maxVisible = Menu.ItemsPerPage
+    if Menu.CurrentCategory > Menu.CategoryScrollOffset + maxVisible + 1 then
+        Menu.CategoryScrollOffset = Menu.CurrentCategory - maxVisible - 1
+    elseif Menu.CurrentCategory <= Menu.CategoryScrollOffset + 1 then
+        Menu.CategoryScrollOffset = math.max(0, Menu.CurrentCategory - 2)
+    end
+
+    for displayIndex = 1, math.min(maxVisible, total) do
+        local categoryIndex = displayIndex + Menu.CategoryScrollOffset + 1
+        local category = categories[categoryIndex]
+        if category then
+            local yy = itemStartY + ((displayIndex - 1) * itemHeight)
+            local selected = (categoryIndex == Menu.CurrentCategory)
+
+            local rowX = x + (8 * scale)
+            local rowW = width - (16 * scale)
+            local rowH = itemHeight - 4
+            local bg = selected and st.rowSelected or (((displayIndex % 2) == 0) and st.row or st.rowAlt)
+
+            if selected then
+                Menu.DrawNextShadow(rowX, yy + 2, rowW, rowH, 0.22)
+                if Menu.SelectorGlowY == 0 then Menu.SelectorGlowY = yy + 2 end
+                if Menu.UIEffects and Menu.UIEffects.hoverGlow then
+                    local smooth = 0.18
+                    Menu.SelectorGlowY = Menu.SelectorGlowY + (((yy + 2) - Menu.SelectorGlowY) * smooth)
+                    if math.abs(Menu.SelectorGlowY - (yy + 2)) < 0.5 then Menu.SelectorGlowY = yy + 2 end
+                else
+                    Menu.SelectorGlowY = yy + 2
+                end
+                if Susano and Susano.DrawRectFilled then
+                    Susano.DrawRectFilled(rowX - 1, Menu.SelectorGlowY - 1, rowW + 2, rowH + 2, st.rowSelectedGlow.r/255, st.rowSelectedGlow.g/255, st.rowSelectedGlow.b/255, 0.10, 10)
+                    Susano.DrawRectFilled(rowX, Menu.SelectorGlowY, rowW, rowH, 1.0, 1.0, 1.0, 0.010, 9)
                 end
             end
-        end
-    end
-
-    if Menu.TopLevelTabs then
-        for _, top in ipairs(Menu.TopLevelTabs) do
-            if top and top.categories then
-                updateList(top.categories)
+            Menu.DrawNextRoundRect(rowX, yy + 2, rowW, rowH, bg, 8)
+            if Susano and Susano.DrawRectFilled then
+                Susano.DrawRectFilled(rowX, yy + 2, 3, rowH, (selected and st.rowSelectedGlow.r or st.rowBorder.r)/255, (selected and st.rowSelectedGlow.g or st.rowBorder.g)/255, (selected and st.rowSelectedGlow.b or st.rowBorder.b)/255, 1.0, 0)
             end
-        end
-    end
 
-    if Menu.Categories then
-        updateList(Menu.Categories)
+            local iconSize = 24 * scale
+            local iconX = rowX + (10 * scale)
+            local iconY = yy + (itemHeight/2) - (iconSize/2)
+            Menu.DrawSouthIcon(iconX, iconY, iconSize, Menu.GetRowIcon(category.name, true), selected)
+
+            local txt = Menu.StripColorCodes(category.name)
+            local textX = iconX + iconSize + ((Menu.TextPadding or 12) * scale)
+            local textY = yy + itemHeight/2 - (9 * scale)
+            Menu.DrawText(textX, textY, txt, 16, 1.0, 1.0, 1.0, 1.0)
+            Menu.DrawText(rowX + rowW - (24 * scale), textY, ">>", 17, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+        end
     end
 end
 
-function Menu.EnsureServerCategoryInList(categoryList)
-    if type(categoryList) ~= "table" then return false end
-
-    for _, cat in ipairs(categoryList) do
-        if cat and tostring(cat.name or "") == "Server" then
-            cat.hasTabs = true
-            cat.tabs = cat.tabs or {}
-
-            local foundServerTab = false
-            for _, tab in ipairs(cat.tabs) do
-                if tab and tostring(tab.name or "") == "Server" then
-                    foundServerTab = true
-                    tab.items = tab.items or Menu.BuildServerInfoItems()
-                end
-            end
-
-            if not foundServerTab then
-                table.insert(cat.tabs, {
-                    name = "Server",
-                    items = Menu.BuildServerInfoItems()
-                })
-            end
-            return true
+function Menu.DrawFooter()
+    local p = Menu.GetScaledPosition()
+    local scale = Menu.Scale or 1.0
+    local st = Menu.NextStyle
+    local totalRows = 0
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        local tab = category and category.tabs and category.tabs[Menu.CurrentTab]
+        local items = (tab and tab.items) or {}
+        totalRows = math.min(Menu.ItemsPerPage, #items)
+        if category and category.hasTabs and category.tabs and #category.tabs > 1 then
+            totalRows = totalRows + 1
         end
+    else
+        totalRows = math.min(Menu.ItemsPerPage, math.max(0, #Menu.Categories - 1))
     end
-
-    table.insert(categoryList, {
-        name = "Server",
-        hasTabs = true,
-        tabs = {
-            {
-                name = "Server",
-                items = Menu.BuildServerInfoItems()
-            }
-        }
-    })
-    return true
+    local footerY = p.y + (Menu.Banner.height * scale) + p.mainMenuHeight + (totalRows * p.itemHeight) + p.footerSpacing
+    local footerText = tostring(Menu.DiscordInvite or "discord.gg/phase")
+    local rightText = "Premium"
+    Menu.DrawNextRoundRect(p.x + 8, footerY, p.width - 16, p.footerHeight, st.footerBg, 8)
+    Menu.DrawSouthIcon(p.x + 18, footerY + 4, 22, "S", false)
+    Menu.DrawText(p.x + 48, footerY + 7, footerText, 13, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+    local posText = string.format("%d/%d", math.max(1, Menu.CurrentCategory - 1), math.max(1, math.max(0, #Menu.Categories - 1)))
+    local tw1 = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(rightText, 13)) or (#rightText * 7)
+    local tw2 = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(posText, 13)) or (#posText * 7)
+    Menu.DrawText(p.x + p.width - tw1 - tw2 - 28, footerY + 7, rightText, 13, st.white.r/255, st.white.g/255, st.white.b/255, 1.0)
+    Menu.DrawText(p.x + p.width - tw2 - 16, footerY + 7, posText, 13, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
 end
-
-function Menu.EnsureServerCategory()
-    local changed = false
-
-    if Menu.TopLevelTabs then
-        for _, top in ipairs(Menu.TopLevelTabs) do
-            if top and top.categories then
-                if Menu.EnsureServerCategoryInList(top.categories) then
-                    changed = true
-                end
-            end
-        end
-    end
-
-    if Menu.Categories then
-        if Menu.EnsureServerCategoryInList(Menu.Categories) then
-            changed = true
-        end
-    end
-
-    return changed
-end
-
-local _Menu_OriginalUpdateCategoriesFromTopTab_Server = Menu.UpdateCategoriesFromTopTab
-function Menu.UpdateCategoriesFromTopTab()
-    _Menu_OriginalUpdateCategoriesFromTopTab_Server()
-    pcall(function()
-        Menu.EnsureServerCategory()
-        Menu.RefreshServerInfo()
-    end)
-end
-
-local _Menu_OriginalRender_Server = Menu.Render
-function Menu.Render()
-    if Menu.Visible then
-        pcall(function()
-            Menu.EnsureServerCategory()
-            local now = GetGameTimer and GetGameTimer() or 0
-            if now - (Menu.ServerInfo.lastRefresh or 0) >= (Menu.ServerInfo.refreshInterval or 3000) then
-                Menu.ServerInfo.lastRefresh = now
-                Menu.RefreshServerInfo()
-            end
-        end)
-    end
-    return _Menu_OriginalRender_Server()
-end
-
-CreateThread(function()
-    while true do
-        pcall(function()
-            Menu.EnsureServerCategory()
-            local now = GetGameTimer and GetGameTimer() or 0
-            if now - (Menu.ServerInfo.lastRefresh or 0) >= (Menu.ServerInfo.refreshInterval or 3000) then
-                Menu.ServerInfo.lastRefresh = now
-                Menu.RefreshServerInfo()
-            end
-        end)
-        Wait(1500)
-    end
-end)
 
 return Menu
