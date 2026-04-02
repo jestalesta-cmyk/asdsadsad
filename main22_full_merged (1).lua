@@ -410,21 +410,12 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
     local numTabs = #category.tabs
     if numTabs < 1 then return end
 
-    local outerPad = 8 * scale
-    local gap = 6 * scale
+    local outerPad = 10 * scale
+    local gap = 8 * scale
     local innerX = x + outerPad
     local innerWidth = width - (outerPad * 2)
     local containerY = startY + (4 * scale)
     local containerH = tabHeight - (8 * scale)
-
-    if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(innerX, containerY, innerWidth, containerH, 10/255, 14/255, 24/255, 0.78, 10 * scale)
-        if Menu.UIEffects and Menu.UIEffects.glass then
-            Susano.DrawRectFilled(innerX + 1, containerY + 1, innerWidth - 2, containerH * 0.35, 1, 1, 1, 0.015, 9 * scale)
-        end
-    else
-        Menu.DrawRoundedRect(innerX, containerY, innerWidth, containerH, 10, 14, 24, 200, 10 * scale)
-    end
 
     local totalGap = gap * (numTabs - 1)
     local tabWidth = (innerWidth - totalGap) / numTabs
@@ -444,36 +435,31 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
         Menu.TabSelectorWidth = targetW
     end
 
-    if Menu.UIEffects and Menu.UIEffects.tabSlider then
-        local smooth = 0.20
-        Menu.TabSelectorX = Menu.TabSelectorX + (targetX - Menu.TabSelectorX) * smooth
-        Menu.TabSelectorWidth = Menu.TabSelectorWidth + (targetW - Menu.TabSelectorWidth) * smooth
-        if math.abs(Menu.TabSelectorX - targetX) < 0.5 then Menu.TabSelectorX = targetX end
-        if math.abs(Menu.TabSelectorWidth - targetW) < 0.5 then Menu.TabSelectorWidth = targetW end
-    else
-        Menu.TabSelectorX = targetX
-        Menu.TabSelectorWidth = targetW
-    end
-
-    if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 199/255, 22/255, 30/255, 0.95, 9 * scale)
-        Susano.DrawRectFilled(Menu.TabSelectorX, containerY + 1, Menu.TabSelectorWidth, containerH * 0.30, 1.0, 1.0, 1.0, 0.018, 9 * scale)
-        Susano.DrawRectFilled(Menu.TabSelectorX, containerY + containerH - (3 * scale), Menu.TabSelectorWidth, 3 * scale, 1.0, 0.33, 0.36, 1.0, 0)
-    end
+    local smooth = 0.22
+    Menu.TabSelectorX = Menu.TabSelectorX + (targetX - Menu.TabSelectorX) * smooth
+    Menu.TabSelectorWidth = Menu.TabSelectorWidth + (targetW - Menu.TabSelectorWidth) * smooth
+    if math.abs(Menu.TabSelectorX - targetX) < 0.5 then Menu.TabSelectorX = targetX end
+    if math.abs(Menu.TabSelectorWidth - targetW) < 0.5 then Menu.TabSelectorWidth = targetW end
 
     for i, tab in ipairs(category.tabs) do
         local tabX = currentX
         local currentTabWidth = tabWidth
         local isSelected = (i == Menu.CurrentTab)
 
-        if not isSelected then
-            if Susano and Susano.DrawRectFilled then
-                Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, 14/255, 19/255, 32/255, 0.72, 9 * scale)
-                if Menu.UIEffects and Menu.UIEffects.glass then
-                    Susano.DrawRectFilled(tabX + 1, containerY + 1, currentTabWidth - 2, containerH * 0.28, 1, 1, 1, 0.012, 8 * scale)
-                end
+        if Susano and Susano.DrawRectFilled then
+            if isSelected then
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 188/255, 19/255, 29/255, 0.98, 10 * scale)
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY + 1, Menu.TabSelectorWidth, containerH * 0.35, 1.0, 1.0, 1.0, 0.04, 10 * scale)
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY + containerH - (3 * scale), Menu.TabSelectorWidth, 3 * scale, 1.0, 0.30, 0.34, 1.0, 0)
             else
-                Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, 14, 19, 32, 184, 9 * scale)
+                Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, 12/255, 16/255, 28/255, 0.96, 10 * scale)
+                Susano.DrawRectFilled(tabX + 1, containerY + 1, currentTabWidth - 2, containerH * 0.22, 1.0, 1.0, 1.0, 0.012, 9 * scale)
+            end
+        else
+            if isSelected then
+                Menu.DrawRoundedRect(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 188, 19, 29, 250, 10 * scale)
+            else
+                Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, 12, 16, 28, 245, 10 * scale)
             end
         end
 
@@ -488,12 +474,7 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
         end
         local textX = tabX + (currentTabWidth / 2) - (textWidth / 2)
         local textY = containerY + (containerH / 2) - (scaledTextSize / 2) + (1 * scale)
-
-        local tr, tg, tb = 1.0, 1.0, 1.0
-        if not isSelected then
-            tr, tg, tb = 0.88, 0.90, 0.95
-        end
-        Menu.DrawText(textX, textY, text, textSize, tr, tg, tb, 1.0)
+        Menu.DrawText(textX, textY, text, textSize, 1.0, 1.0, 1.0, 1.0)
 
         currentX = currentX + tabWidth + gap
     end
