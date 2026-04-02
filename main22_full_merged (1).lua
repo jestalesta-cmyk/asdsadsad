@@ -6267,6 +6267,8 @@ Menu.NextStyle = {
     black = southColor(0, 0, 0, 255)
 }
 
+st = Menu.NextStyle
+
 Menu.UIVariant = "next"
 
 function Menu.StripColorCodes(text)
