@@ -5699,17 +5699,6 @@ function Menu.RefreshOnlinePlayers()
                     isSeparator = true,
                     separatorText = "[" .. tostring(selectedPlayer.id or "?") .. "] " .. tostring(selectedPlayer.name or "Unknown")
                 },
-                { name = "Name: " .. tostring(selectedPlayer.name or "Unknown"), type = "action", onClick = function() end },
-                { name = "Server ID: " .. tostring(selectedPlayer.id or "N/A"), type = "action", onClick = function() end },
-                { name = "Client ID: " .. tostring(selectedPlayer.clientId or "N/A"), type = "action", onClick = function() end },
-                { name = coordText, type = "action", onClick = function() end },
-                {
-                    name = "Teleport To Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.TeleportToPlayer(selectedPlayer)
-                    end
-                },
                 {
                     name = "Troll Player",
                     type = "action",
@@ -5725,53 +5714,10 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
-                    name = "Ramp All Vehicles",
-                    type = "action",
-                    onClick = function()
-                        Menu.RampAllVehicles()
-                    end
-                },
-                {
-                    name = "FIB Building All Vehicles",
-                    type = "action",
-                    onClick = function()
-                        Menu.FIBAllVehicles()
-                    end
-                },
-                {
-                    name = "Magnet Cars",
-                    type = "action",
-                    onClick = function()
-                        Menu.MagnetCars()
-                    end
-                },
-                {
-                    name = "Flip All Vehicles",
-                    type = "action",
-                    onClick = function()
-                        Menu.FlipAllVehicles()
-                    end
-                },
-                {
-                    name = "Spin Cars Tornado",
-                    type = "action",
-                    onClick = function()
-                        Menu.SpinCarsTornado()
-                    end
-                },
-                {
                     name = "Particle Effects On Player",
                     type = "action",
                     onClick = function()
                         Menu.PlayerList.submenu = "particleeffects"
-                        Menu.RefreshOnlinePlayers()
-                    end
-                },
-                {
-                    name = Menu.IsPiggybacking and "Stop Piggyback" or "Piggyback On Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.TogglePiggybackOnPlayer(selectedPlayer)
                         Menu.RefreshOnlinePlayers()
                     end
                 },
@@ -5788,9 +5734,6 @@ function Menu.RefreshOnlinePlayers()
                     onClick = function()
                         Menu.LaunchPlayer(selectedPlayer)
                     end
-                },
-                {
-                    name = "Clone NPC Attack"
                 },
                 {
                     name = "Infinite Jump Bug",
@@ -5863,6 +5806,49 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
+                    name = "Ramp All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.RampAllVehicles()
+                    end
+                },
+                {
+                    name = "FIB Building All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.FIBAllVehicles()
+                    end
+                },
+                {
+                    name = "Magnet Cars",
+                    type = "action",
+                    onClick = function()
+                        Menu.MagnetCars()
+                    end
+                },
+                {
+                    name = "Flip All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.FlipAllVehicles()
+                    end
+                },
+                {
+                    name = "Spin Cars Tornado",
+                    type = "action",
+                    onClick = function()
+                        Menu.SpinCarsTornado()
+                    end
+                },
+                {
+                    name = Menu.IsPiggybacking and "Stop Piggyback" or "Piggyback On Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.TogglePiggybackOnPlayer(selectedPlayer)
+                        Menu.RefreshOnlinePlayers()
+                    end
+                },
+                {
                     name = Menu.HexAllIncludeSelf and "HEX All Players (Skip Self)" or "HEX All Players",
                     type = "action",
                     onClick = function()
@@ -5877,7 +5863,22 @@ function Menu.RefreshOnlinePlayers()
                         Menu.HexAllIncludeSelf = value == true
                         Menu.RefreshOnlinePlayers()
                     end
-                }
+                },
+                {
+                    isSeparator = true,
+                    separatorText = "PLAYER DETAILS"
+                },
+                {
+                    name = "Teleport To Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.TeleportToPlayer(selectedPlayer)
+                    end
+                },
+                { name = "Name: " .. tostring(selectedPlayer.name or "Unknown"), type = "action", onClick = function() end },
+                { name = "Server ID: " .. tostring(selectedPlayer.id or "N/A"), type = "action", onClick = function() end },
+                { name = "Client ID: " .. tostring(selectedPlayer.clientId or "N/A"), type = "action", onClick = function() end },
+                { name = coordText, type = "action", onClick = function() end }
             }
         end
     else
