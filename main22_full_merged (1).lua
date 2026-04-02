@@ -2250,48 +2250,61 @@ end
 
 
 
+
+
+
 function Menu.InfiniteJumpBug(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
 
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-
-    local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
-
-    if NetworkRequestControlOfEntity then
-        for i = 1, 15 do
-            NetworkRequestControlOfEntity(ped)
-            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
-                break
-            end
-            Wait(0)
-        end
-    end
-
     CreateThread(function()
         for i = 1, 40 do
-            if DoesEntityExist(ped) then
-                if SetPedToRagdoll then
-                    SetPedToRagdoll(ped, 600, 600, 0, true, true, false)
-                end
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    if NetworkRequestControlOfEntity then
+                        for j = 1, 8 do
+                            NetworkRequestControlOfEntity(ped)
+                            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                                break
+                            end
+                            Wait(0)
+                        end
+                    end
 
-                if ApplyForceToEntity then
-                    ApplyForceToEntity(
-                        ped,
-                        1,
-                        math.random(-5,5),
-                        math.random(-5,5),
-                        150.0,
-                        0.0,0.0,0.0,
-                        0,
-                        true,true,true,false,true
-                    )
-                end
+                    if SetPedToRagdoll then
+                        SetPedToRagdoll(ped, 700, 700, 0, true, true, false)
+                    end
 
-                if SetEntityVelocity then
-                    SetEntityVelocity(ped, 0.0, 0.0, 25.0)
+                    if SetEntityVelocity then
+                        SetEntityVelocity(
+                            ped,
+                            math.random(-3, 3) * 1.0,
+                            math.random(-3, 3) * 1.0,
+                            30.0
+                        )
+                    end
+
+                    if ApplyForceToEntity then
+                        ApplyForceToEntity(
+                            ped, 1,
+                            math.random(-8, 8) * 1.0,
+                            math.random(-8, 8) * 1.0,
+                            180.0,
+                            0.0, 0.0, 0.0,
+                            0,
+                            true, true, true, false, true
+                        )
+                    end
+
+                    if GetEntityCoords and AddExplosion then
+                        local c = GetEntityCoords(ped)
+                        local x = c.x or c[1] or 0.0
+                        local y = c.y or c[2] or 0.0
+                        local z = c.z or c[3] or 0.0
+                        AddExplosion(x, y, z - 1.0, 4, 0.0, false, false, 0.0, false)
+                    end
                 end
             end
             Wait(120)
@@ -2450,50 +2463,114 @@ function Menu.LaunchPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
 
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then
-        return
-    end
-
-    local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
-
-    if NetworkRequestControlOfEntity then
-        for i = 1, 20 do
-            NetworkRequestControlOfEntity(ped)
-            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
-                break
-            end
-            Wait(0)
+    CreateThread(function()
+        local target = GetPlayerFromServerId(playerData.id)
+        if target == -1 then
+            return
         end
-    end
 
-    if SetPedToRagdoll then
-        SetPedToRagdoll(ped, 2000, 2000, 0, true, true, false)
-    end
+        local ped = GetPlayerPed(target)
+        if not ped or ped == 0 then
+            return
+        end
 
-    if SetEntityVelocity then
-        SetEntityVelocity(ped, 0.0, 0.0, 50.0)
-    end
+        local model = `adder`
 
-    if ApplyForceToEntity then
-        ApplyForceToEntity(
-            ped,
-            1,
-            0.0, 0.0, 400.0,
-            0.0, 0.0, 0.0,
-            0,
-            true, true, true, false, true
-        )
-    end
+        if RequestModel and HasModelLoaded then
+            RequestModel(model)
+            local tries = 0
+            while not HasModelLoaded(model) and tries < 200 do
+                tries = tries + 1
+                Wait(0)
+            end
+        end
 
-    if GetEntityCoords and AddExplosion then
-        local coords = GetEntityCoords(ped)
-        local x = coords.x or coords[1] or 0.0
-        local y = coords.y or coords[2] or 0.0
-        local z = coords.z or coords[3] or 0.0
-        AddExplosion(x, y, z - 1.0, 4, 5.0, true, false, 1.0)
-    end
+        if NetworkRequestControlOfEntity then
+            for i = 1, 12 do
+                NetworkRequestControlOfEntity(ped)
+                if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                    break
+                end
+                Wait(0)
+            end
+        end
+
+        local coords = GetEntityCoords and GetEntityCoords(ped) or nil
+        local x = coords and (coords.x or coords[1]) or 0.0
+        local y = coords and (coords.y or coords[2]) or 0.0
+        local z = coords and (coords.z or coords[3]) or 0.0
+
+        local veh = nil
+        if CreateVehicle then
+            veh = CreateVehicle(model, x, y, z + 0.6, 0.0, true, true)
+        end
+
+        if not veh or veh == 0 then
+            return
+        end
+
+        if NetworkRequestControlOfEntity then
+            for i = 1, 12 do
+                NetworkRequestControlOfEntity(veh)
+                if NetworkHasControlOfEntity and NetworkHasControlOfEntity(veh) then
+                    break
+                end
+                Wait(0)
+            end
+        end
+
+        if SetEntityAsMissionEntity then
+            SetEntityAsMissionEntity(veh, true, true)
+        end
+
+        if StartEntityFire then
+            pcall(StartEntityFire, ped)
+        end
+
+        if SetPedToRagdoll then
+            SetPedToRagdoll(ped, 1500, 1500, 0, true, true, false)
+        end
+
+        if AttachEntityToEntity then
+            AttachEntityToEntity(
+                veh, ped, 0,
+                0.0, 0.0, -0.35,
+                0.0, 0.0, 0.0,
+                true, true, false, true, 1, true
+            )
+        end
+
+        for tick = 1, 20 do
+            if DoesEntityExist and DoesEntityExist(veh) then
+                if SetEntityVelocity then
+                    SetEntityVelocity(veh, 0.0, 0.0, 26.0 + (tick * 1.1))
+                end
+
+                if ApplyForceToEntity then
+                    ApplyForceToEntity(
+                        veh,
+                        1,
+                        math.random(-2, 2) * 1.0,
+                        math.random(-2, 2) * 1.0,
+                        240.0,
+                        0.0, 0.0, 0.0,
+                        0,
+                        true, true, true, false, true
+                    )
+                end
+            end
+
+            if DoesEntityExist and DoesEntityExist(ped) and SetPedToRagdoll then
+                SetPedToRagdoll(ped, 700, 700, 0, true, true, false)
+            end
+
+            Wait(120)
+        end
+
+        if DoesEntityExist and DoesEntityExist(veh) and DetachEntity then
+            DetachEntity(veh, true, true)
+        end
+    end)
 end
 
 function Menu.HEXAllPlayers()
@@ -2711,6 +2788,105 @@ function Menu.Render()
     return _Menu_OriginalRender_ParticleLoops()
 end
 
+
+
+-- ===== REAL TROLL PACK =====
+function Menu.StuckInAir(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    SetEntityCoords(ped, coords.x, coords.y, coords.z + 5.0, false,false,false,false)
+    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+end
+
+function Menu.RealLagTroll(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 30 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+                    Wait(80)
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, false) end
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+
+function Menu.BlindPlayer(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 15 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if UseParticleFxAssetNextCall and StartNetworkedParticleFxNonLoopedAtCoord then
+                        UseParticleFxAssetNextCall("core")
+                        StartNetworkedParticleFxNonLoopedAtCoord("ent_sht_smoke",
+                            c.x, c.y, c.z + 1.0, 0.0,0.0,0.0, 5.0, false,false,false,false)
+                    end
+                end
+            end
+            Wait(200)
+        end
+    end)
+end
+
+function Menu.HornSpam(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 20 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if PlaySoundFromCoord then
+                        PlaySoundFromCoord(-1, "Horn", c.x, c.y, c.z, "DLC_HEIST_HACKING_SNAKE_SOUNDS", false, 0, false)
+                    end
+                end
+            end
+            Wait(250)
+        end
+    end)
+end
+
+function Menu.CarSpinTrap(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+
+    local model = `adder`
+    if RequestModel and HasModelLoaded then
+        RequestModel(model)
+        local tries=0
+        while not HasModelLoaded(model) and tries<200 do tries=tries+1 Wait(0) end
+    end
+
+    local veh = CreateVehicle and CreateVehicle(model, coords.x, coords.y, coords.z, 0.0, true, true) or nil
+    if not veh or veh==0 then return end
+
+    if AttachEntityToEntity then
+        AttachEntityToEntity(veh, ped, 0, 0.0,0.0,0.0, 0.0,0.0,0.0, true,true,false,true,1,true)
+    end
+
+    for i = 1, 20 do
+        if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
+        Wait(100)
+    end
+end
 
 return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
 end
@@ -3724,7 +3900,106 @@ end
 
 function Menu.GetHeaderTitle()
     if Menu.Title and type(Menu.Title) == "string" and Menu.Title ~= "" then
-        return Menu.Title
+        
+-- ===== REAL TROLL PACK =====
+function Menu.StuckInAir(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    SetEntityCoords(ped, coords.x, coords.y, coords.z + 5.0, false,false,false,false)
+    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+end
+
+function Menu.RealLagTroll(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 30 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+                    Wait(80)
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, false) end
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+
+function Menu.BlindPlayer(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 15 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if UseParticleFxAssetNextCall and StartNetworkedParticleFxNonLoopedAtCoord then
+                        UseParticleFxAssetNextCall("core")
+                        StartNetworkedParticleFxNonLoopedAtCoord("ent_sht_smoke",
+                            c.x, c.y, c.z + 1.0, 0.0,0.0,0.0, 5.0, false,false,false,false)
+                    end
+                end
+            end
+            Wait(200)
+        end
+    end)
+end
+
+function Menu.HornSpam(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 20 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if PlaySoundFromCoord then
+                        PlaySoundFromCoord(-1, "Horn", c.x, c.y, c.z, "DLC_HEIST_HACKING_SNAKE_SOUNDS", false, 0, false)
+                    end
+                end
+            end
+            Wait(250)
+        end
+    end)
+end
+
+function Menu.CarSpinTrap(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+
+    local model = `adder`
+    if RequestModel and HasModelLoaded then
+        RequestModel(model)
+        local tries=0
+        while not HasModelLoaded(model) and tries<200 do tries=tries+1 Wait(0) end
+    end
+
+    local veh = CreateVehicle and CreateVehicle(model, coords.x, coords.y, coords.z, 0.0, true, true) or nil
+    if not veh or veh==0 then return end
+
+    if AttachEntityToEntity then
+        AttachEntityToEntity(veh, ped, 0, 0.0,0.0,0.0, 0.0,0.0,0.0, true,true,false,true,1,true)
+    end
+
+    for i = 1, 20 do
+        if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
+        Wait(100)
+    end
+end
+
+return Menu.Title
     end
 
     if Menu.TopLevelTabs and Menu.TopLevelTabs[Menu.CurrentTopTab] and Menu.TopLevelTabs[Menu.CurrentTopTab].name then
@@ -4784,7 +5059,106 @@ function Menu.ApplyStreamProofState(forceValue)
     end
 
     if Menu._streamProofLastApplied == desired then
-        return Menu.StreamProofBackend, Menu.StreamProofStatus
+        
+-- ===== REAL TROLL PACK =====
+function Menu.StuckInAir(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    SetEntityCoords(ped, coords.x, coords.y, coords.z + 5.0, false,false,false,false)
+    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+end
+
+function Menu.RealLagTroll(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 30 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+                    Wait(80)
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, false) end
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+
+function Menu.BlindPlayer(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 15 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if UseParticleFxAssetNextCall and StartNetworkedParticleFxNonLoopedAtCoord then
+                        UseParticleFxAssetNextCall("core")
+                        StartNetworkedParticleFxNonLoopedAtCoord("ent_sht_smoke",
+                            c.x, c.y, c.z + 1.0, 0.0,0.0,0.0, 5.0, false,false,false,false)
+                    end
+                end
+            end
+            Wait(200)
+        end
+    end)
+end
+
+function Menu.HornSpam(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 20 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if PlaySoundFromCoord then
+                        PlaySoundFromCoord(-1, "Horn", c.x, c.y, c.z, "DLC_HEIST_HACKING_SNAKE_SOUNDS", false, 0, false)
+                    end
+                end
+            end
+            Wait(250)
+        end
+    end)
+end
+
+function Menu.CarSpinTrap(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+
+    local model = `adder`
+    if RequestModel and HasModelLoaded then
+        RequestModel(model)
+        local tries=0
+        while not HasModelLoaded(model) and tries<200 do tries=tries+1 Wait(0) end
+    end
+
+    local veh = CreateVehicle and CreateVehicle(model, coords.x, coords.y, coords.z, 0.0, true, true) or nil
+    if not veh or veh==0 then return end
+
+    if AttachEntityToEntity then
+        AttachEntityToEntity(veh, ped, 0, 0.0,0.0,0.0, 0.0,0.0,0.0, true,true,false,true,1,true)
+    end
+
+    for i = 1, 20 do
+        if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
+        Wait(100)
+    end
+end
+
+return Menu.StreamProofBackend, Menu.StreamProofStatus
     end
 
     Menu._streamProofLastApplied = desired
@@ -5553,6 +5927,41 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
+                    name = "Stuck In Air",
+                    type = "action",
+                    onClick = function()
+                        Menu.StuckInAir(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Fake Lag",
+                    type = "action",
+                    onClick = function()
+                        Menu.RealLagTroll(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Blind Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.BlindPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Horn Spam",
+                    type = "action",
+                    onClick = function()
+                        Menu.HornSpam(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Car Spin Trap",
+                    type = "action",
+                    onClick = function()
+                        Menu.CarSpinTrap(selectedPlayer)
+                    end
+                },
+                {
                     name = Menu.HexAllIncludeSelf and "HEX All Players (Skip Self)" or "HEX All Players",
                     type = "action",
                     onClick = function()
@@ -5699,5 +6108,104 @@ end)
 
 Menu.ApplyTheme(Menu.CurrentTheme or "Purple")
 Menu.ApplyStreamProofState(Menu.StreamProof)
+
+
+-- ===== REAL TROLL PACK =====
+function Menu.StuckInAir(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    SetEntityCoords(ped, coords.x, coords.y, coords.z + 5.0, false,false,false,false)
+    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+end
+
+function Menu.RealLagTroll(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 30 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+                    Wait(80)
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, false) end
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+
+function Menu.BlindPlayer(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 15 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if UseParticleFxAssetNextCall and StartNetworkedParticleFxNonLoopedAtCoord then
+                        UseParticleFxAssetNextCall("core")
+                        StartNetworkedParticleFxNonLoopedAtCoord("ent_sht_smoke",
+                            c.x, c.y, c.z + 1.0, 0.0,0.0,0.0, 5.0, false,false,false,false)
+                    end
+                end
+            end
+            Wait(200)
+        end
+    end)
+end
+
+function Menu.HornSpam(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 20 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if PlaySoundFromCoord then
+                        PlaySoundFromCoord(-1, "Horn", c.x, c.y, c.z, "DLC_HEIST_HACKING_SNAKE_SOUNDS", false, 0, false)
+                    end
+                end
+            end
+            Wait(250)
+        end
+    end)
+end
+
+function Menu.CarSpinTrap(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+
+    local model = `adder`
+    if RequestModel and HasModelLoaded then
+        RequestModel(model)
+        local tries=0
+        while not HasModelLoaded(model) and tries<200 do tries=tries+1 Wait(0) end
+    end
+
+    local veh = CreateVehicle and CreateVehicle(model, coords.x, coords.y, coords.z, 0.0, true, true) or nil
+    if not veh or veh==0 then return end
+
+    if AttachEntityToEntity then
+        AttachEntityToEntity(veh, ped, 0, 0.0,0.0,0.0, 0.0,0.0,0.0, true,true,false,true,1,true)
+    end
+
+    for i = 1, 20 do
+        if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
+        Wait(100)
+    end
+end
 
 return Menu
