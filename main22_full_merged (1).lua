@@ -252,13 +252,13 @@ function Menu.DrawText(x, y, text, size_px, r, g, b, a)
     size_px = math.floor(size_px + 0.5)
 
     if original >= 19 then
-        if size_px < 18 then size_px = 18 end
+        if size_px < 20 then size_px = 20 end
     elseif original >= 15 then
-        if size_px < 15 then size_px = 15 end
+        if size_px < 17 then size_px = 17 end
     elseif original >= 13 then
-        if size_px < 13 then size_px = 13 end
+        if size_px < 14 then size_px = 14 end
     else
-        if size_px < 12 then size_px = 12 end
+        if size_px < 13 then size_px = 13 end
     end
 
     text = Menu.StripColorCodes and Menu.StripColorCodes(text) or tostring(text or "")
@@ -6311,11 +6311,11 @@ Menu.UIEffects = {
 
 Menu.FontTuning = {
     enabled = true,
-    sizeMultiplier = 0.94,
-    headerMultiplier = 0.96,
-    tabMultiplier = 0.95,
-    itemMultiplier = 0.95,
-    footerMultiplier = 0.92
+    sizeMultiplier = 1.05,
+    headerMultiplier = 1.10,
+    tabMultiplier = 1.06,
+    itemMultiplier = 1.06,
+    footerMultiplier = 1.02
 }
 
 
