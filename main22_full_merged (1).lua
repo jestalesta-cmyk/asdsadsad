@@ -410,8 +410,8 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
     local numTabs = #category.tabs
     if numTabs < 1 then return end
 
-    local outerPad = 10 * scale
-    local gap = 8 * scale
+    local outerPad = 6 * scale
+    local gap = (numTabs >= 5) and (4 * scale) or (8 * scale)
     local innerX = x + outerPad
     local innerWidth = width - (outerPad * 2)
     local containerY = startY + (4 * scale)
@@ -448,30 +448,42 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
 
         if Susano and Susano.DrawRectFilled then
             if isSelected then
-                Susano.DrawRectFilled(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 188/255, 19/255, 29/255, 0.98, 10 * scale)
-                Susano.DrawRectFilled(Menu.TabSelectorX, containerY + 1, Menu.TabSelectorWidth, containerH * 0.35, 1.0, 1.0, 1.0, 0.04, 10 * scale)
-                Susano.DrawRectFilled(Menu.TabSelectorX, containerY + containerH - (3 * scale), Menu.TabSelectorWidth, 3 * scale, 1.0, 0.30, 0.34, 1.0, 0)
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 188/255, 19/255, 29/255, 0.98, 8 * scale)
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY + 1, Menu.TabSelectorWidth, containerH * 0.30, 1.0, 1.0, 1.0, 0.03, 8 * scale)
+                Susano.DrawRectFilled(Menu.TabSelectorX, containerY + containerH - (2 * scale), Menu.TabSelectorWidth, 2 * scale, 1.0, 0.30, 0.34, 1.0, 0)
             else
-                Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, 12/255, 16/255, 28/255, 0.96, 10 * scale)
-                Susano.DrawRectFilled(tabX + 1, containerY + 1, currentTabWidth - 2, containerH * 0.22, 1.0, 1.0, 1.0, 0.012, 9 * scale)
+                Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, 12/255, 16/255, 28/255, 0.96, 8 * scale)
             end
         else
             if isSelected then
-                Menu.DrawRoundedRect(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 188, 19, 29, 250, 10 * scale)
+                Menu.DrawRoundedRect(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 188, 19, 29, 250, 8 * scale)
             else
-                Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, 12, 16, 28, 245, 10 * scale)
+                Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, 12, 16, 28, 245, 8 * scale)
             end
         end
 
-        local text = Menu.StripColorCodes and Menu.StripColorCodes(tab.name) or tostring(tab.name)
-        local textSize = 15
+        local rawText = Menu.StripColorCodes and Menu.StripColorCodes(tab.name) or tostring(tab.name)
+        local text = rawText
+        if numTabs >= 5 then
+            if rawText == "Player List" then text = "Player" end
+            if rawText == "Players" then text = "Players" end
+            if rawText == "Vehicle" then text = "Vehicle" end
+        end
+
+        local textSize = (numTabs >= 5) and 12 or 14
         local scaledTextSize = textSize * scale
         local textWidth = 0
         if Susano and Susano.GetTextWidth then
             textWidth = Susano.GetTextWidth(text, scaledTextSize)
         else
-            textWidth = string.len(text) * 8 * scale
+            textWidth = string.len(text) * 7 * scale
         end
+
+        while textWidth > (currentTabWidth - (10 * scale)) and #text > 3 do
+            text = string.sub(text, 1, #text - 1)
+            textWidth = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(text, scaledTextSize)) or (string.len(text) * 7 * scale)
+        end
+
         local textX = tabX + (currentTabWidth / 2) - (textWidth / 2)
         local textY = containerY + (containerH / 2) - (scaledTextSize / 2) + (1 * scale)
         Menu.DrawText(textX, textY, text, textSize, 1.0, 1.0, 1.0, 1.0)
