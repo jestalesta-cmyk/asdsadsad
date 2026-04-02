@@ -6647,8 +6647,6 @@ function Menu.DrawFooter()
     Menu.DrawText(p.x + p.width - tw2 - 16, footerY + 7, posText, 13, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
 end
 
-r
-
 -- sidebar UI override
 Menu.SidebarStyle = {
     bg = southColor(7, 10, 16, 244),
