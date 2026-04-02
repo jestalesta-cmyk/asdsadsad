@@ -1031,11 +1031,14 @@ function Menu.DrawCategories()
         local mainMenuHeight = scaledPos.mainMenuHeight
         local mainMenuSpacing = scaledPos.mainMenuSpacing
 
-        Menu.DrawTabs(category, x, startY, width, mainMenuHeight)
+        local hideCategoryTabs = (tostring(category.name or "") == "Online")
+        if not hideCategoryTabs then
+            Menu.DrawTabs(category, x, startY, width, mainMenuHeight)
+        end
 
         local currentTab = category.tabs[Menu.CurrentTab]
         if currentTab and currentTab.items then
-            local itemY = startY + mainMenuHeight + mainMenuSpacing
+            local itemY = startY + ((not hideCategoryTabs) and (mainMenuHeight + mainMenuSpacing) or 0)
             local totalItems = #currentTab.items
             local maxVisible = Menu.ItemsPerPage
 
