@@ -6516,21 +6516,49 @@ end
 function Menu.DrawTabs(category, x, startY, width, tabHeight)
     if not category or not category.tabs then return end
     local st = Menu.NextStyle
+    local scale = Menu.Scale or 1.0
     local tabCount = #category.tabs
     if tabCount < 1 then return end
-    local tabW = (width - 16) / tabCount
-    local baseX = x + 8
+
+    local outerPad = 8 * scale
+    local gap = 6 * scale
+    local backX = x + outerPad
+    local backY = startY + (2 * scale)
+    local backW = width - (outerPad * 2)
+    local backH = tabHeight - (4 * scale)
+
+    Menu.DrawNextRoundRect(backX, backY, backW, backH, st.titleBg, 8)
+
+    local usableW = backW - (gap * (tabCount - 1))
+    local tabW = usableW / tabCount
+    local pillH = backH - (4 * scale)
+    local pillY = backY + (2 * scale)
+    local fontSize = tabCount >= 6 and 12 or 13
+
     for i, tab in ipairs(category.tabs) do
-        local tx = baseX + ((i - 1) * tabW)
+        local tx = backX + ((i - 1) * (tabW + gap))
         local sel = (i == Menu.CurrentTab)
-        local bg = sel and st.accentSoft or st.titleBg
-        Menu.DrawNextRoundRect(tx, startY + 4, tabW - 4, tabHeight - 8, bg, 7)
-        if sel and Susano and Susano.DrawRectFilled then
-            Susano.DrawRectFilled(tx, startY + tabHeight - 5, tabW - 4, 3, st.accent.r/255, st.accent.g/255, st.accent.b/255, 1.0, 0)
+        local bg = sel and st.accent or st.panel2
+        local border = sel and st.rowSelectedGlow or st.rowBorder
+
+        if sel then
+            Menu.DrawNextShadow(tx, pillY, tabW, pillH, 0.16)
         end
+
+        Menu.DrawNextRoundRect(tx, pillY, tabW, pillH, bg, 7)
+
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(tx, pillY + pillH - 2, tabW, 2, border.r/255, border.g/255, border.b/255, sel and 1.0 or 0.55, 0)
+        end
+
         local txt = Menu.StripColorCodes(tab.name)
-        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(txt, 14)) or (#txt * 7)
-        Menu.DrawText(tx + ((tabW - 4)/2) - (tw/2), startY + (tabHeight/2) - 8, txt, 14, 1, 1, 1, 1)
+        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(txt, fontSize)) or (#txt * 7)
+        Menu.DrawText(tx + (tabW / 2) - (tw / 2), pillY + (pillH / 2) - ((fontSize / 2) + 1), txt, fontSize, 1, 1, 1, 1)
+
+        if not sel and Susano and Susano.DrawRectFilled and i < tabCount then
+            local sepX = tx + tabW + (gap / 2) - 0.5
+            Susano.DrawRectFilled(sepX, pillY + 6, 1, pillH - 12, st.rowBorder.r/255, st.rowBorder.g/255, st.rowBorder.b/255, 0.35, 0)
+        end
     end
 end
 
@@ -6549,7 +6577,7 @@ function Menu.DrawCategories()
 
         if category.hasTabs and category.tabs and #category.tabs > 1 then
             Menu.DrawTabs(category, x, itemStartY, width, p.mainMenuHeight)
-            itemStartY = itemStartY + p.mainMenuHeight
+            itemStartY = itemStartY + p.mainMenuHeight + (6 * scale)
         end
 
         local tab = category.tabs and category.tabs[Menu.CurrentTab]
