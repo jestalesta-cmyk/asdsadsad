@@ -388,34 +388,62 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
     local containerH = tabHeight - (8 * scale)
 
     if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(innerX, containerY, innerWidth, containerH, 10/255, 14/255, 24/255, 0.92, 10 * scale)
+        Susano.DrawRectFilled(innerX, containerY, innerWidth, containerH, 10/255, 14/255, 24/255, 0.78, 10 * scale)
+        if Menu.UIEffects and Menu.UIEffects.glass then
+            Susano.DrawRectFilled(innerX + 1, containerY + 1, innerWidth - 2, containerH * 0.42, 1, 1, 1, 0.04, 9 * scale)
+        end
     else
-        Menu.DrawRoundedRect(innerX, containerY, innerWidth, containerH, 10, 14, 24, 235, 10 * scale)
+        Menu.DrawRoundedRect(innerX, containerY, innerWidth, containerH, 10, 14, 24, 200, 10 * scale)
     end
 
     local totalGap = gap * (numTabs - 1)
     local tabWidth = (innerWidth - totalGap) / numTabs
     local currentX = innerX
 
+    local targetX, targetW = innerX, tabWidth
+    for i = 1, numTabs do
+        if i == Menu.CurrentTab then
+            targetX = innerX + ((i - 1) * (tabWidth + gap))
+            targetW = tabWidth
+            break
+        end
+    end
+
+    if Menu.TabSelectorX == 0 then
+        Menu.TabSelectorX = targetX
+        Menu.TabSelectorWidth = targetW
+    end
+
+    if Menu.UIEffects and Menu.UIEffects.tabSlider then
+        local smooth = 0.20
+        Menu.TabSelectorX = Menu.TabSelectorX + (targetX - Menu.TabSelectorX) * smooth
+        Menu.TabSelectorWidth = Menu.TabSelectorWidth + (targetW - Menu.TabSelectorWidth) * smooth
+        if math.abs(Menu.TabSelectorX - targetX) < 0.5 then Menu.TabSelectorX = targetX end
+        if math.abs(Menu.TabSelectorWidth - targetW) < 0.5 then Menu.TabSelectorWidth = targetW end
+    else
+        Menu.TabSelectorX = targetX
+        Menu.TabSelectorWidth = targetW
+    end
+
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 199/255, 22/255, 30/255, 0.95, 9 * scale)
+        Susano.DrawRectFilled(Menu.TabSelectorX, containerY + 1, Menu.TabSelectorWidth, containerH * 0.42, 1.0, 1.0, 1.0, 0.06, 9 * scale)
+        Susano.DrawRectFilled(Menu.TabSelectorX, containerY + containerH - (3 * scale), Menu.TabSelectorWidth, 3 * scale, 1.0, 0.33, 0.36, 1.0, 0)
+    end
+
     for i, tab in ipairs(category.tabs) do
         local tabX = currentX
         local currentTabWidth = tabWidth
         local isSelected = (i == Menu.CurrentTab)
 
-        local bgR, bgG, bgB, bgA = 14, 19, 32, 235
-        if isSelected then
-            bgR, bgG, bgB, bgA = 199, 22, 30, 245
-        end
-
-        if Susano and Susano.DrawRectFilled then
-            Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, bgR/255, bgG/255, bgB/255, bgA/255, 9 * scale)
-            if isSelected then
-                Susano.DrawRectFilled(tabX, containerY + containerH - (3 * scale), currentTabWidth, 3 * scale, 1.0, 0.33, 0.36, 1.0, 0)
-            end
-        else
-            Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, bgR, bgG, bgB, bgA, 9 * scale)
-            if isSelected then
-                Menu.DrawRect(tabX, containerY + containerH - (3 * scale), currentTabWidth, 3 * scale, 255, 84, 92, 255)
+        if not isSelected then
+            if Susano and Susano.DrawRectFilled then
+                Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, 14/255, 19/255, 32/255, 0.72, 9 * scale)
+                if Menu.UIEffects and Menu.UIEffects.glass then
+                    Susano.DrawRectFilled(tabX + 1, containerY + 1, currentTabWidth - 2, containerH * 0.42, 1, 1, 1, 0.03, 8 * scale)
+                end
+            else
+                Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, 14, 19, 32, 184, 9 * scale)
             end
         end
 
@@ -6245,6 +6273,17 @@ st = Menu.NextStyle
 
 Menu.UIVariant = "next"
 
+Menu.UIEffects = {
+    glass = true,
+    tabSlider = true,
+    hoverGlow = true
+}
+
+Menu.TabSelectorX = Menu.TabSelectorX or 0
+Menu.TabSelectorWidth = Menu.TabSelectorWidth or 0
+Menu.SelectorGlowY = Menu.SelectorGlowY or 0
+
+
 function Menu.StripColorCodes(text)
     text = tostring(text or "")
     text = text:gsub("~.-~", "")
@@ -6360,7 +6399,16 @@ function Menu.DrawBackground()
     Menu.DrawNextShadow(x, y, w, panelH, 0.25)
     Menu.DrawNextRoundRect(x, y, w, panelH, st.panel, 12)
     if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(x + 1, y + 1, w - 2, panelH - 2, st.panel2.r/255, st.panel2.g/255, st.panel2.b/255, 0.12, 11)
+        Susano.DrawRectFilled(x + 1, y + 1, w - 2, panelH - 2, st.panel2.r/255, st.panel2.g/255, st.panel2.b/255, 0.16, 11)
+        if Menu.UIEffects and Menu.UIEffects.glass then
+            local steps = 22
+            for i = 0, steps - 1 do
+                local yy = y + 2 + (i * ((panelH - 4) / steps))
+                local alpha = 0.022 + ((1.0 - (i / steps)) * 0.018)
+                Susano.DrawRectFilled(x + 2, yy, w - 4, ((panelH - 4) / steps), 1.0, 1.0, 1.0, alpha, 10)
+            end
+            Susano.DrawRectFilled(x + 1, y + 1, w - 2, 1, 1.0, 1.0, 1.0, 0.08, 0)
+        end
     end
 end
 
@@ -6467,7 +6515,19 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
     local bg = isSelected and st.rowSelected or (((math.floor(itemY / itemHeight) % 2) == 0) and st.row or st.rowAlt)
 
     if isSelected then
-        Menu.DrawNextShadow(rowX, itemY + 2, rowW, rowH, 0.18)
+        Menu.DrawNextShadow(rowX, itemY + 2, rowW, rowH, 0.22)
+        if Menu.SelectorGlowY == 0 then Menu.SelectorGlowY = itemY + 2 end
+        if Menu.UIEffects and Menu.UIEffects.hoverGlow then
+            local smooth = 0.18
+            Menu.SelectorGlowY = Menu.SelectorGlowY + (((itemY + 2) - Menu.SelectorGlowY) * smooth)
+            if math.abs(Menu.SelectorGlowY - (itemY + 2)) < 0.5 then Menu.SelectorGlowY = itemY + 2 end
+        else
+            Menu.SelectorGlowY = itemY + 2
+        end
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(rowX - 1, Menu.SelectorGlowY - 1, rowW + 2, rowH + 2, st.rowSelectedGlow.r/255, st.rowSelectedGlow.g/255, st.rowSelectedGlow.b/255, 0.10, 10)
+            Susano.DrawRectFilled(rowX, Menu.SelectorGlowY, rowW, rowH, 1.0, 1.0, 1.0, 0.028, 9)
+        end
     end
     Menu.DrawNextRoundRect(rowX, itemY + 2, rowW, rowH, bg, 8)
     if Susano and Susano.DrawRectFilled then
@@ -6597,7 +6657,19 @@ function Menu.DrawCategories()
             local bg = selected and st.rowSelected or (((displayIndex % 2) == 0) and st.row or st.rowAlt)
 
             if selected then
-                Menu.DrawNextShadow(rowX, yy + 2, rowW, rowH, 0.18)
+                Menu.DrawNextShadow(rowX, yy + 2, rowW, rowH, 0.22)
+                if Menu.SelectorGlowY == 0 then Menu.SelectorGlowY = yy + 2 end
+                if Menu.UIEffects and Menu.UIEffects.hoverGlow then
+                    local smooth = 0.18
+                    Menu.SelectorGlowY = Menu.SelectorGlowY + (((yy + 2) - Menu.SelectorGlowY) * smooth)
+                    if math.abs(Menu.SelectorGlowY - (yy + 2)) < 0.5 then Menu.SelectorGlowY = yy + 2 end
+                else
+                    Menu.SelectorGlowY = yy + 2
+                end
+                if Susano and Susano.DrawRectFilled then
+                    Susano.DrawRectFilled(rowX - 1, Menu.SelectorGlowY - 1, rowW + 2, rowH + 2, st.rowSelectedGlow.r/255, st.rowSelectedGlow.g/255, st.rowSelectedGlow.b/255, 0.10, 10)
+                    Susano.DrawRectFilled(rowX, Menu.SelectorGlowY, rowW, rowH, 1.0, 1.0, 1.0, 0.028, 9)
+                end
             end
             Menu.DrawNextRoundRect(rowX, yy + 2, rowW, rowH, bg, 8)
             if Susano and Susano.DrawRectFilled then
@@ -6645,256 +6717,6 @@ function Menu.DrawFooter()
     local tw2 = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(posText, 13)) or (#posText * 7)
     Menu.DrawText(p.x + p.width - tw1 - tw2 - 28, footerY + 7, rightText, 13, st.white.r/255, st.white.g/255, st.white.b/255, 1.0)
     Menu.DrawText(p.x + p.width - tw2 - 16, footerY + 7, posText, 13, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
-end
-
--- sidebar UI override
-Menu.SidebarStyle = {
-    bg = southColor(7, 10, 16, 244),
-    bg2 = southColor(10, 14, 22, 244),
-    sidebar = southColor(12, 16, 26, 250),
-    panel = southColor(8, 12, 20, 240),
-    panel2 = southColor(12, 18, 28, 240),
-    red = southColor(205, 24, 31, 248),
-    red2 = southColor(130, 12, 18, 248),
-    line = southColor(255, 66, 74, 255),
-    white = southColor(242, 244, 248, 255),
-    dim = southColor(175, 182, 196, 235),
-    muted = southColor(120, 128, 145, 220),
-    darkRow = southColor(12, 17, 28, 235),
-    darkRow2 = southColor(15, 21, 34, 235),
-    border = southColor(28, 34, 48, 255),
-    shadow = southColor(0, 0, 0, 170)
-}
-
-Menu.Position.width = 520
-Menu.Position.x = 19
-Menu.Position.y = 119
-
-function Menu.DrawBackground()
-    local p = Menu.GetScaledPosition()
-    local st = Menu.SidebarStyle
-    local scale = Menu.Scale or 1.0
-
-    local contentRows = 0
-    if Menu.OpenedCategory then
-        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
-        local tab = category and category.tabs and category.tabs[Menu.CurrentTab]
-        local items = (tab and tab.items) or {}
-        contentRows = math.min(Menu.ItemsPerPage, #items)
-        if category and category.hasTabs and category.tabs and #category.tabs > 1 then
-            contentRows = contentRows + 1
-        end
-    else
-        contentRows = math.min(Menu.ItemsPerPage, math.max(5, math.max(0, #Menu.Categories - 1)))
-    end
-
-    local totalH = (Menu.Banner.height * scale) + p.mainMenuHeight + (contentRows * p.itemHeight) + p.footerSpacing + p.footerHeight
-
-    Menu.DrawNextShadow(p.x, p.y, p.width, totalH, 0.23)
-    Menu.DrawNextRoundRect(p.x, p.y, p.width, totalH, st.bg, 12)
-    Menu.DrawNextRoundRect(p.x + 2, p.y + 2, p.width - 4, totalH - 4, st.bg2, 11)
-
-    local sidebarW = 158 * scale
-    Menu.DrawNextRoundRect(p.x + 8, p.y + (Menu.Banner.height * scale) + 8, sidebarW, totalH - (Menu.Banner.height * scale) - 16, st.sidebar, 10)
-    Menu.DrawNextRoundRect(p.x + sidebarW + 18, p.y + (Menu.Banner.height * scale) + 8, p.width - sidebarW - 26, totalH - (Menu.Banner.height * scale) - 16, st.panel, 10)
-
-    if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(p.x + sidebarW + 18, p.y + (Menu.Banner.height * scale) + 8, 2, totalH - (Menu.Banner.height * scale) - 16, st.line.r/255, st.line.g/255, st.line.b/255, 0.9, 0)
-    end
-end
-
-function Menu.DrawHeader()
-    local p = Menu.GetScaledPosition()
-    local st = Menu.SidebarStyle
-    local scale = Menu.Scale or 1.0
-    local bannerH = Menu.Banner.height * scale
-
-    if Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
-        Susano.DrawImage(Menu.bannerTexture, p.x, p.y, p.width, bannerH, 1, 1, 1, 1, 0)
-    else
-        local steps = 36
-        for i = 0, steps - 1 do
-            local yy = p.y + (i * (bannerH / steps))
-            local t = i / math.max(1, steps - 1)
-            local r = (20 + ((Menu.SidebarStyle.red.r - 20) * (1.0 - t * 0.7))) / 255
-            local g = (14 + ((18 - 14) * (1.0 - t * 0.3))) / 255
-            local b = (24 + ((36 - 24) * (1.0 - t * 0.5))) / 255
-            if Susano and Susano.DrawRectFilled then
-                Susano.DrawRectFilled(p.x, yy, p.width, bannerH / steps, r, g, b, 0.98, 0)
-            end
-        end
-    end
-
-    if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(p.x, p.y + bannerH - 3, p.width, 3, st.line.r/255, st.line.g/255, st.line.b/255, 1.0, 0)
-    end
-
-    local title = Menu.GetHeaderTitle()
-    local titleSize = 20
-    local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(title, titleSize)) or (#title * 9)
-    Menu.DrawText(p.x + (p.width/2) - (tw/2), p.y + bannerH + 8, title, titleSize, st.white.r/255, st.white.g/255, st.white.b/255, 1.0)
-end
-
-function Menu.DrawTabs(category, x, startY, width, tabHeight)
-    local scale = Menu.Scale or 1.0
-    local st = Menu.SidebarStyle
-    if not category or not category.hasTabs or not category.tabs then return end
-
-    local tabCount = #category.tabs
-    if tabCount < 1 then return end
-
-    local baseX = x + (12 * scale)
-    local baseY = startY + (8 * scale)
-    local totalWidth = width - (24 * scale)
-    local gap = 6 * scale
-    local tabW = (totalWidth - (gap * (tabCount - 1))) / tabCount
-    local tabH = tabHeight - (16 * scale)
-
-    for i, tab in ipairs(category.tabs) do
-        local tx = baseX + ((i - 1) * (tabW + gap))
-        local selected = (i == Menu.CurrentTab)
-        local bg = selected and st.red or st.darkRow
-        Menu.DrawNextRoundRect(tx, baseY, tabW, tabH, bg, 8)
-        if selected and Susano and Susano.DrawRectFilled then
-            Susano.DrawRectFilled(tx, baseY + tabH - 3, tabW, 3, 1.0, 0.38, 0.40, 1.0, 0)
-        end
-        local txt = Menu.StripColorCodes(tab.name)
-        local size = 14
-        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(txt, size)) or (#txt * 7)
-        Menu.DrawText(tx + (tabW/2) - (tw/2), baseY + (tabH/2) - 8, txt, size, 1, 1, 1, 1)
-    end
-end
-
-function Menu.DrawCategories()
-    local p = Menu.GetScaledPosition()
-    local st = Menu.SidebarStyle
-    local scale = Menu.Scale or 1.0
-    local bannerH = Menu.Banner.height * scale
-    local headerY = p.y + bannerH + p.mainMenuHeight
-    local sidebarX = p.x + 8
-    local sidebarW = 158 * scale
-    local sidebarInnerX = sidebarX + 8
-    local sidebarInnerW = sidebarW - 16
-    local contentX = p.x + sidebarW + 30
-    local contentW = p.width - sidebarW - 42
-    local rowH = p.itemHeight - 4
-
-    local categories = Menu.Categories or {}
-    local totalCategories = math.max(0, #categories - 1)
-    local maxVisible = math.min(Menu.ItemsPerPage, totalCategories)
-
-    if Menu.CurrentCategory > Menu.CategoryScrollOffset + maxVisible + 1 then
-        Menu.CategoryScrollOffset = Menu.CurrentCategory - maxVisible - 1
-    elseif Menu.CurrentCategory <= Menu.CategoryScrollOffset + 1 then
-        Menu.CategoryScrollOffset = math.max(0, Menu.CurrentCategory - 2)
-    end
-
-    for displayIndex = 1, maxVisible do
-        local categoryIndex = displayIndex + Menu.CategoryScrollOffset + 1
-        local category = categories[categoryIndex]
-        if category then
-            local yy = headerY + 10 + ((displayIndex - 1) * p.itemHeight)
-            local selected = (categoryIndex == Menu.CurrentCategory)
-            local bg = selected and st.red or (((displayIndex % 2) == 0) and st.darkRow or st.darkRow2)
-            Menu.DrawNextRoundRect(sidebarInnerX, yy, sidebarInnerW, rowH, bg, 8)
-            if selected and Susano and Susano.DrawRectFilled then
-                Susano.DrawRectFilled(sidebarInnerX, yy, 3, rowH, st.line.r/255, st.line.g/255, st.line.b/255, 1.0, 0)
-            end
-
-            local iconSize = 22 * scale
-            local iconX = sidebarInnerX + 8
-            local iconY = yy + (rowH/2) - (iconSize/2)
-            Menu.DrawSouthIcon(iconX, iconY, iconSize, Menu.GetRowIcon(category.name, true), selected)
-
-            local txt = Menu.StripColorCodes(category.name)
-            local tx = iconX + iconSize + 8
-            local ty = yy + (rowH/2) - 8
-            Menu.DrawText(tx, ty, txt, 14, 1, 1, 1, 1)
-        end
-    end
-
-    if not Menu.OpenedCategory then
-        local title = "Select Category"
-        local sub = "Open a section from the left sidebar"
-        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(title, 24)) or (#title * 11)
-        local sw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(sub, 15)) or (#sub * 7)
-        Menu.DrawText(contentX + (contentW/2) - (tw/2), headerY + 58, title, 24, st.white.r/255, st.white.g/255, st.white.b/255, 1.0)
-        Menu.DrawText(contentX + (contentW/2) - (sw/2), headerY + 92, sub, 15, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
-        return
-    end
-
-    local category = categories[Menu.OpenedCategory]
-    if not category then return end
-
-    local contentTop = headerY + 10
-    if category.hasTabs and category.tabs and #category.tabs > 1 then
-        Menu.DrawTabs(category, contentX, contentTop, contentW, p.mainMenuHeight + 12)
-        contentTop = contentTop + p.mainMenuHeight + 12
-    end
-
-    local currentTab = category.tabs and category.tabs[Menu.CurrentTab]
-    local items = (currentTab and currentTab.items) or {}
-    local totalItems = #items
-    local maxItems = Menu.ItemsPerPage
-
-    if Menu.CurrentItem > Menu.ItemScrollOffset + maxItems then
-        Menu.ItemScrollOffset = Menu.CurrentItem - maxItems
-    elseif Menu.CurrentItem <= Menu.ItemScrollOffset then
-        Menu.ItemScrollOffset = math.max(0, Menu.CurrentItem - 1)
-    end
-
-    for displayIndex = 1, math.min(maxItems, totalItems) do
-        local itemIndex = displayIndex + Menu.ItemScrollOffset
-        local item = items[itemIndex]
-        if item then
-            local yy = contentTop + ((displayIndex - 1) * p.itemHeight)
-            Menu.DrawItem(contentX, yy, contentW, p.itemHeight, item, itemIndex == Menu.CurrentItem)
-        end
-    end
-end
-
-function Menu.DrawFooter()
-    local p = Menu.GetScaledPosition()
-    local st = Menu.SidebarStyle
-    local scale = Menu.Scale or 1.0
-    local bannerH = Menu.Banner.height * scale
-
-    local contentRows = 0
-    if Menu.OpenedCategory then
-        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
-        local tab = category and category.tabs and category.tabs[Menu.CurrentTab]
-        local items = (tab and tab.items) or {}
-        contentRows = math.min(Menu.ItemsPerPage, #items)
-        if category and category.hasTabs and category.tabs and #category.tabs > 1 then
-            contentRows = contentRows + 1
-        end
-    else
-        contentRows = math.min(Menu.ItemsPerPage, math.max(5, math.max(0, #Menu.Categories - 1)))
-    end
-
-    local footerY = p.y + bannerH + p.mainMenuHeight + (contentRows * p.itemHeight) + p.footerSpacing
-    local sidebarW = 158 * scale
-    local contentX = p.x + sidebarW + 30
-    local contentW = p.width - sidebarW - 42
-
-    Menu.DrawNextRoundRect(p.x + 8, footerY, sidebarW, p.footerHeight, st.sidebar, 8)
-    Menu.DrawNextRoundRect(contentX, footerY, contentW, p.footerHeight, st.panel2, 8)
-
-    Menu.DrawSouthIcon(p.x + 18, footerY + 4, 22, "S", false)
-    local leftText = tostring(Menu.DiscordInvite or "discord.gg/phase")
-    Menu.DrawText(p.x + 48, footerY + 7, leftText, 13, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
-
-    local rightText = "Sidebar UI"
-    local posText = ""
-    if Menu.OpenedCategory then
-        posText = string.format("%d/%d", math.max(1, Menu.CurrentItem), math.max(1, Menu.GetCurrentItemCount()))
-    else
-        posText = string.format("%d/%d", math.max(1, Menu.CurrentCategory - 1), math.max(1, math.max(0, #Menu.Categories - 1)))
-    end
-    local tw1 = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(rightText, 13)) or (#rightText * 7)
-    local tw2 = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(posText, 13)) or (#posText * 7)
-    Menu.DrawText(contentX + contentW - tw1 - tw2 - 24, footerY + 7, rightText, 13, st.white.r/255, st.white.g/255, st.white.b/255, 1.0)
-    Menu.DrawText(contentX + contentW - tw2 - 14, footerY + 7, posText, 13, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
 end
 
 return Menu
