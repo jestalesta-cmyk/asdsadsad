@@ -1,4 +1,12 @@
 local Menu = {}
+
+Menu.ServerPlayerCount = 0
+
+RegisterNetEvent("menu:updatePlayerCount")
+AddEventHandler("menu:updatePlayerCount", function(count)
+    Menu.ServerPlayerCount = count or 0
+end)
+
 Menu.Visible = true
 Menu.CurrentCategory = 2
 Menu.CurrentPage = 1
@@ -43,16 +51,6 @@ Menu.BindingKey = nil
 Menu.BindingKeyName = nil
 
 Menu.ShowKeybinds = false
-
-
-Menu.ServerInfo = {
-    playerCount = 0,
-    endpoint = "Not available",
-    resourceCount = 0,
-    playerNames = {},
-    lastSync = 0
-}
-
 
 
 Menu.CurrentTopTab = 1
@@ -3613,7 +3611,6 @@ CreateThread(function()
     while true do
         pcall(function()
             Menu.EnsureServerCategory()
-            Menu.RequestServerInfoSync()
             Menu.RefreshServerCategory()
         end)
         Wait(1500)
@@ -5405,51 +5402,22 @@ end
 
 
 
-
--- ===== SERVER INFO SYNC =====
-RegisterNetEvent("menu:serverInfoSync")
-AddEventHandler("menu:serverInfoSync", function(payload)
-    if type(payload) ~= "table" then return end
-    Menu.ServerInfo = Menu.ServerInfo or {}
-    Menu.ServerInfo.playerCount = tonumber(payload.playerCount) or 0
-    Menu.ServerInfo.endpoint = tostring(payload.endpoint or "Not available")
-    Menu.ServerInfo.resourceCount = tonumber(payload.resourceCount) or 0
-    Menu.ServerInfo.playerNames = type(payload.playerNames) == "table" and payload.playerNames or {}
-    Menu.ServerInfo.lastSync = GetGameTimer and GetGameTimer() or 0
-end)
-
-function Menu.RequestServerInfoSync()
-    if TriggerServerEvent then
-        TriggerServerEvent("menu:requestServerInfo")
-    end
-end
-
 -- ===== SERVER INFO CATEGORY =====
 function Menu.GetServerPlayerCount()
-    if Menu.ServerInfo and tonumber(Menu.ServerInfo.playerCount) and tonumber(Menu.ServerInfo.playerCount) > 0 then
-        return tonumber(Menu.ServerInfo.playerCount)
-    end
-
-    if GetNumberOfActivePlayers then
-        local ok, count = pcall(GetNumberOfActivePlayers)
-        if ok and count then return count end
-    end
-
     if GetActivePlayers then
         local ok, players = pcall(GetActivePlayers)
         if ok and type(players) == "table" then
             return #players
         end
     end
-
-    return 1
+    if GetNumberOfPlayers then
+        local ok, count = pcall(GetNumberOfPlayers)
+        if ok and count then return count end
+    end
+    return 0
 end
 
 function Menu.GetServerResourceCount()
-    if Menu.ServerInfo and tonumber(Menu.ServerInfo.resourceCount) and tonumber(Menu.ServerInfo.resourceCount) > 0 then
-        return tonumber(Menu.ServerInfo.resourceCount)
-    end
-
     if GetNumResources then
         local ok, count = pcall(GetNumResources)
         if ok and count then return count end
@@ -5458,64 +5426,34 @@ function Menu.GetServerResourceCount()
 end
 
 function Menu.GetServerEndpoint()
-    if Menu.ServerInfo and Menu.ServerInfo.endpoint and tostring(Menu.ServerInfo.endpoint) ~= "" and tostring(Menu.ServerInfo.endpoint) ~= "Not available" then
-        return tostring(Menu.ServerInfo.endpoint)
-    end
+    local candidates = {
+        function() return GetCurrentServerEndpoint and GetCurrentServerEndpoint() end,
+        function() return GetConvar and GetConvar("sv_endpointPrivacy", "") end,
+        function() return GetConvar and GetConvar("sv_listingIPOverride", "") end,
+        function() return GetConvar and GetConvar("sv_hostname", "") end
+    }
 
-    if GetCurrentServerEndpoint then
-        local ok, endpoint = pcall(GetCurrentServerEndpoint)
-        if ok and endpoint and tostring(endpoint) ~= "" then
-            return tostring(endpoint)
+    for _, fn in ipairs(candidates) do
+        local ok, value = pcall(fn)
+        if ok and value and tostring(value) ~= "" then
+            return tostring(value)
         end
     end
 
     return "Not available"
 end
 
-function Menu.GetServerPlayerNames()
-    if Menu.ServerInfo and type(Menu.ServerInfo.playerNames) == "table" and #Menu.ServerInfo.playerNames > 0 then
-        return Menu.ServerInfo.playerNames
-    end
-
-    local names = {}
-    if GetActivePlayers and GetPlayerName then
-        local ok, players = pcall(GetActivePlayers)
-        if ok and type(players) == "table" then
-            for _, player in ipairs(players) do
-                names[#names + 1] = GetPlayerName(player) or ("Player " .. tostring(player))
-            end
-        end
-    end
-    return names
-end
-
 function Menu.BuildServerInfoItems()
-    local players = Menu.GetServerPlayerCount()
+    local players = Menu.ServerPlayerCount or Menu.GetServerPlayerCount()
     local endpoint = Menu.GetServerEndpoint()
     local resources = Menu.GetServerResourceCount()
-    local names = Menu.GetServerPlayerNames()
 
-    local items = {
+    return {
         { isSeparator = true, separatorText = "SERVER INFORMATION" },
         { name = "Players: " .. tostring(players), type = "action", onClick = function() end },
         { name = "IP: " .. tostring(endpoint), type = "action", onClick = function() end },
         { name = "Resources: " .. tostring(resources), type = "action", onClick = function() end }
     }
-
-    if #names > 0 then
-        items[#items + 1] = { isSeparator = true, separatorText = "ONLINE PLAYERS" }
-        local limit = math.min(#names, 12)
-        for i = 1, limit do
-            items[#items + 1] = { name = tostring(i) .. ". " .. tostring(names[i]), type = "action", onClick = function() end }
-        end
-        if #names > limit then
-            items[#items + 1] = { name = "... +" .. tostring(#names - limit) .. " more", type = "action", onClick = function() end }
-        end
-    end
-
-    return items
-end
-
 end
 
 function Menu.EnsureServerCategoryInList(categoryList)
