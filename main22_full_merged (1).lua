@@ -3598,6 +3598,17 @@ function Menu.HandleInput()
 end
 
 
+
+CreateThread(function()
+    while true do
+        pcall(function()
+            Menu.EnsureServerCategory()
+            Menu.RefreshServerCategory()
+        end)
+        Wait(1500)
+    end
+end)
+
 CreateThread(function()
     Menu.LoadingStartTime = GetGameTimer() or 0
 
@@ -5379,6 +5390,152 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
         }
     })
     return true
+end
+
+
+
+-- ===== SERVER INFO CATEGORY =====
+function Menu.GetServerPlayerCount()
+    if GetActivePlayers then
+        local ok, players = pcall(GetActivePlayers)
+        if ok and type(players) == "table" then
+            return #players
+        end
+    end
+    if GetNumberOfPlayers then
+        local ok, count = pcall(GetNumberOfPlayers)
+        if ok and count then return count end
+    end
+    return 0
+end
+
+function Menu.GetServerResourceCount()
+    if GetNumResources then
+        local ok, count = pcall(GetNumResources)
+        if ok and count then return count end
+    end
+    return 0
+end
+
+function Menu.GetServerEndpoint()
+    local candidates = {
+        function() return GetCurrentServerEndpoint and GetCurrentServerEndpoint() end,
+        function() return GetConvar and GetConvar("sv_endpointPrivacy", "") end,
+        function() return GetConvar and GetConvar("sv_listingIPOverride", "") end,
+        function() return GetConvar and GetConvar("sv_hostname", "") end
+    }
+
+    for _, fn in ipairs(candidates) do
+        local ok, value = pcall(fn)
+        if ok and value and tostring(value) ~= "" then
+            return tostring(value)
+        end
+    end
+
+    return "Not available"
+end
+
+function Menu.BuildServerInfoItems()
+    local players = Menu.GetServerPlayerCount()
+    local endpoint = Menu.GetServerEndpoint()
+    local resources = Menu.GetServerResourceCount()
+
+    return {
+        { isSeparator = true, separatorText = "SERVER INFORMATION" },
+        { name = "Players: " .. tostring(players), type = "action", onClick = function() end },
+        { name = "IP: " .. tostring(endpoint), type = "action", onClick = function() end },
+        { name = "Resources: " .. tostring(resources), type = "action", onClick = function() end }
+    }
+end
+
+function Menu.EnsureServerCategoryInList(categoryList)
+    if type(categoryList) ~= "table" then return false end
+
+    for _, cat in ipairs(categoryList) do
+        if cat and tostring(cat.name or "") == "Server" then
+            cat.hasTabs = true
+            cat.tabs = cat.tabs or {}
+            local foundInfo = false
+            for _, tab in ipairs(cat.tabs) do
+                if tab and tostring(tab.name or "") == "Info" then
+                    foundInfo = true
+                    tab.items = Menu.BuildServerInfoItems()
+                end
+            end
+            if not foundInfo then
+                table.insert(cat.tabs, {
+                    name = "Info",
+                    items = Menu.BuildServerInfoItems()
+                })
+            end
+            return true
+        end
+    end
+
+    table.insert(categoryList, {
+        name = "Server",
+        hasTabs = true,
+        tabs = {
+            {
+                name = "Info",
+                items = Menu.BuildServerInfoItems()
+            }
+        }
+    })
+    return true
+end
+
+function Menu.EnsureServerCategory()
+    if Menu.TopLevelTabs then
+        for _, top in ipairs(Menu.TopLevelTabs) do
+            if top and type(top.categories) == "table" then
+                Menu.EnsureServerCategoryInList(top.categories)
+            end
+        end
+    end
+
+    if Menu.Categories then
+        local list = {}
+        for i = 2, #Menu.Categories do
+            list[#list + 1] = Menu.Categories[i]
+        end
+        if #list > 0 then
+            Menu.EnsureServerCategoryInList(list)
+            local rebuilt = { Menu.Categories[1] or { name = "Menu" } }
+            for _, cat in ipairs(list) do rebuilt[#rebuilt + 1] = cat end
+            Menu.Categories = rebuilt
+        end
+    end
+end
+
+function Menu.RefreshServerCategory()
+    if Menu.TopLevelTabs then
+        for _, top in ipairs(Menu.TopLevelTabs) do
+            if top and type(top.categories) == "table" then
+                for _, cat in ipairs(top.categories) do
+                    if cat and tostring(cat.name or "") == "Server" and cat.tabs then
+                        for _, tab in ipairs(cat.tabs) do
+                            if tab and tostring(tab.name or "") == "Info" then
+                                tab.items = Menu.BuildServerInfoItems()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if Menu.Categories then
+        for _, cat in ipairs(Menu.Categories) do
+            if cat and tostring(cat.name or "") == "Server" and cat.tabs then
+                for _, tab in ipairs(cat.tabs) do
+                    if tab and tostring(tab.name or "") == "Info" then
+                        tab.items = Menu.BuildServerInfoItems()
+                    end
+                end
+            end
+        end
+    end
 end
 
 function Menu.EnsureOnlineCategory()
