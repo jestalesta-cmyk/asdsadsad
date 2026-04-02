@@ -3900,14 +3900,113 @@ end
 
 function Menu.GetHeaderTitle()
     if Menu.Title and type(Menu.Title) == "string" and Menu.Title ~= "" then
-        return Menu.Title
+        
+-- ===== REAL TROLL PACK =====
+function Menu.StuckInAir(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    SetEntityCoords(ped, coords.x, coords.y, coords.z + 5.0, false,false,false,false)
+    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+end
+
+function Menu.RealLagTroll(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 30 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+                    Wait(80)
+                    if FreezeEntityPosition then FreezeEntityPosition(ped, false) end
+                end
+            end
+            Wait(120)
+        end
+    end)
+end
+
+function Menu.BlindPlayer(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 15 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if UseParticleFxAssetNextCall and StartNetworkedParticleFxNonLoopedAtCoord then
+                        UseParticleFxAssetNextCall("core")
+                        StartNetworkedParticleFxNonLoopedAtCoord("ent_sht_smoke",
+                            c.x, c.y, c.z + 1.0, 0.0,0.0,0.0, 5.0, false,false,false,false)
+                    end
+                end
+            end
+            Wait(200)
+        end
+    end)
+end
+
+function Menu.HornSpam(playerData)
+    if not playerData then return end
+    CreateThread(function()
+        for i = 1, 20 do
+            local target = GetPlayerFromServerId(playerData.id)
+            if target ~= -1 then
+                local ped = GetPlayerPed(target)
+                if ped and ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    if PlaySoundFromCoord then
+                        PlaySoundFromCoord(-1, "Horn", c.x, c.y, c.z, "DLC_HEIST_HACKING_SNAKE_SOUNDS", false, 0, false)
+                    end
+                end
+            end
+            Wait(250)
+        end
+    end)
+end
+
+function Menu.CarSpinTrap(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+
+    local model = `adder`
+    if RequestModel and HasModelLoaded then
+        RequestModel(model)
+        local tries=0
+        while not HasModelLoaded(model) and tries<200 do tries=tries+1 Wait(0) end
+    end
+
+    local veh = CreateVehicle and CreateVehicle(model, coords.x, coords.y, coords.z, 0.0, true, true) or nil
+    if not veh or veh==0 then return end
+
+    if AttachEntityToEntity then
+        AttachEntityToEntity(veh, ped, 0, 0.0,0.0,0.0, 0.0,0.0,0.0, true,true,false,true,1,true)
+    end
+
+    for i = 1, 20 do
+        if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
+        Wait(100)
+    end
+end
+
+return Menu.Title
     end
 
     if Menu.TopLevelTabs and Menu.TopLevelTabs[Menu.CurrentTopTab] and Menu.TopLevelTabs[Menu.CurrentTopTab].name then
         return tostring(Menu.TopLevelTabs[Menu.CurrentTopTab].name)
     end
 
-    return "Main"
+    return "Menu"
 end
 
 function Menu.GetHeaderSubtitle()
@@ -5225,7 +5324,6 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
             cat.hasTabs = true
             cat.tabs = cat.tabs or {}
             local foundPlayers = false
-            local foundTroll = false
             for _, tab in ipairs(cat.tabs) do
                 if tab and tostring(tab.name or "") == "Players" then
                     foundPlayers = true
@@ -5233,12 +5331,6 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
                         { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                         { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                         { isSeparator = true, separatorText = "ONLINE PLAYERS" },
-                        { name = "Loading...", type = "action", onClick = function() end }
-                    }
-                elseif tab and tostring(tab.name or "") == "Troll" then
-                    foundTroll = true
-                    tab.items = tab.items or {
-                        { isSeparator = true, separatorText = "TROLL PLAYERS" },
                         { name = "Loading...", type = "action", onClick = function() end }
                     }
                 end
@@ -5250,15 +5342,6 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
                         { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                         { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                         { isSeparator = true, separatorText = "ONLINE PLAYERS" },
-                        { name = "Loading...", type = "action", onClick = function() end }
-                    }
-                })
-            end
-            if not foundTroll then
-                table.insert(cat.tabs, {
-                    name = "Troll",
-                    items = {
-                        { isSeparator = true, separatorText = "TROLL PLAYERS" },
                         { name = "Loading...", type = "action", onClick = function() end }
                     }
                 })
@@ -5679,292 +5762,261 @@ function Menu.RefreshOnlinePlayers()
     Menu.PlayerList.players = result
     Menu.ApplyPlayerSearch()
 
-    local shownPlayers = Menu.PlayerList.filteredPlayers or {}
     local selectedPlayer = Menu.PlayerList.selectedPlayer
-    local submenu = Menu.PlayerList.submenu
-
-    local playersItems = {
-        {
-            name = "Search Players",
-            type = "action",
-            onClick = function()
-                Menu.OpenPlayerSearch()
+    if selectedPlayer then
+        if Menu.PlayerList.submenu == "particleeffects" then
+            items = Menu.BuildParticleLoopItems(selectedPlayer)
+        else
+            local coordText = "Coords: N/A"
+            local ped = Menu.GetPlayerPedSafe and Menu.GetPlayerPedSafe(selectedPlayer.clientId) or nil
+            if ped and GetEntityCoords then
+                local coords = GetEntityCoords(ped)
+                if coords then
+                    local cx = coords.x or coords[1] or 0.0
+                    local cy = coords.y or coords[2] or 0.0
+                    local cz = coords.z or coords[3] or 0.0
+                    coordText = string.format("Coords: %.2f, %.2f, %.2f", cx, cy, cz)
+                end
             end
-        },
-        {
-            name = "Clear Search",
-            type = "action",
-            onClick = function()
-                Menu.PlayerList.searchQuery = ""
-                Menu.ApplyPlayerSearch()
-                Menu.RefreshOnlinePlayers()
-            end
-        },
-        {
-            isSeparator = true,
-            separatorText = (#tostring(Menu.PlayerList.searchQuery or "") > 0) and ("RESULTS: " .. tostring(Menu.PlayerList.searchQuery)) or "ONLINE PLAYERS"
-        }
-    }
 
-    for _, p in ipairs(shownPlayers) do
-        table.insert(playersItems, {
-            name = "[" .. tostring(p.id) .. "] " .. tostring(p.name),
-            type = "action",
-            onClick = function()
-                Menu.OpenPlayerInfo(p)
-            end
-        })
-    end
-
-    if #shownPlayers == 0 then
-        table.insert(playersItems, {
-            name = "No players found",
-            type = "action",
-            onClick = function() end
-        })
-    end
-
-    local trollItems = nil
-
-    if selectedPlayer and submenu == "particleeffects" then
-        trollItems = Menu.BuildParticleLoopItems(selectedPlayer)
-    elseif selectedPlayer and submenu == "troll_actions" then
-        local coordText = "Coords: N/A"
-        local ped = Menu.GetPlayerPedSafe and Menu.GetPlayerPedSafe(selectedPlayer.clientId) or nil
-        if ped and GetEntityCoords then
-            local coords = GetEntityCoords(ped)
-            if coords then
-                local cx = coords.x or coords[1] or 0.0
-                local cy = coords.y or coords[2] or 0.0
-                local cz = coords.z or coords[3] or 0.0
-                coordText = string.format("Coords: %.2f, %.2f, %.2f", cx, cy, cz)
-            end
+            items = {
+                {
+                    name = "Back To Player List",
+                    type = "action",
+                    onClick = function()
+                        Menu.ClosePlayerInfo()
+                    end
+                },
+                {
+                    name = "Refresh Selected Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.RefreshOnlinePlayers()
+                    end
+                },
+                {
+                    isSeparator = true,
+                    separatorText = "[" .. tostring(selectedPlayer.id or "?") .. "] " .. tostring(selectedPlayer.name or "Unknown")
+                },
+                { name = "Name: " .. tostring(selectedPlayer.name or "Unknown"), type = "action", onClick = function() end },
+                { name = "Server ID: " .. tostring(selectedPlayer.id or "N/A"), type = "action", onClick = function() end },
+                { name = "Client ID: " .. tostring(selectedPlayer.clientId or "N/A"), type = "action", onClick = function() end },
+                { name = coordText, type = "action", onClick = function() end },
+                {
+                    name = "Teleport To Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.TeleportToPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Troll Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.TrollPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Gun NPC Attack",
+                    type = "action",
+                    onClick = function()
+                        Menu.GunNPCAttackPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Ramp All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.RampAllVehicles()
+                    end
+                },
+                {
+                    name = "FIB Building All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.FIBAllVehicles()
+                    end
+                },
+                {
+                    name = "Magnet Cars",
+                    type = "action",
+                    onClick = function()
+                        Menu.MagnetCars()
+                    end
+                },
+                {
+                    name = "Flip All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.FlipAllVehicles()
+                    end
+                },
+                {
+                    name = "Spin Cars Tornado",
+                    type = "action",
+                    onClick = function()
+                        Menu.SpinCarsTornado()
+                    end
+                },
+                {
+                    name = "Particle Effects On Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.PlayerList.submenu = "particleeffects"
+                        Menu.RefreshOnlinePlayers()
+                    end
+                },
+                {
+                    name = Menu.IsPiggybacking and "Stop Piggyback" or "Piggyback On Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.TogglePiggybackOnPlayer(selectedPlayer)
+                        Menu.RefreshOnlinePlayers()
+                    end
+                },
+                {
+                    name = "HEX Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.HEXPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Launch Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.LaunchPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Clone NPC Attack"
+                },
+                {
+                    name = "Infinite Jump Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.InfiniteJumpBug(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Clone NPC Attack",
+                    type = "action",
+                    onClick = function()
+                        Menu.CloneNPCAttackPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Freeze Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.FreezePlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Vehicle Rain On Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.VehicleRainOnPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Cage Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.CagePlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Stuck In Air",
+                    type = "action",
+                    onClick = function()
+                        Menu.StuckInAir(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Fake Lag",
+                    type = "action",
+                    onClick = function()
+                        Menu.RealLagTroll(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Blind Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.BlindPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Horn Spam",
+                    type = "action",
+                    onClick = function()
+                        Menu.HornSpam(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Car Spin Trap",
+                    type = "action",
+                    onClick = function()
+                        Menu.CarSpinTrap(selectedPlayer)
+                    end
+                },
+                {
+                    name = Menu.HexAllIncludeSelf and "HEX All Players (Skip Self)" or "HEX All Players",
+                    type = "action",
+                    onClick = function()
+                        Menu.HEXAllPlayers()
+                    end
+                },
+                {
+                    name = "Toggle HEX Include Self",
+                    type = "toggle",
+                    value = Menu.HexAllIncludeSelf,
+                    onClick = function(value)
+                        Menu.HexAllIncludeSelf = value == true
+                        Menu.RefreshOnlinePlayers()
+                    end
+                }
+            }
         end
-
-        trollItems = {
-            {
-                name = "Back To Troll Player List",
-                type = "action",
-                onClick = function()
-                    Menu.PlayerList.selectedPlayer = nil
-                    Menu.PlayerList.submenu = nil
-                    Menu.RefreshOnlinePlayers()
-                end
-            },
-            {
-                name = "Refresh Selected Player",
-                type = "action",
-                onClick = function()
-                    Menu.RefreshOnlinePlayers()
-                end
-            },
-            {
-                isSeparator = true,
-                separatorText = "[" .. tostring(selectedPlayer.id or "?") .. "] " .. tostring(selectedPlayer.name or "Unknown")
-            },
-            {
-                name = "Troll Player",
-                type = "action",
-                onClick = function()
-                    Menu.TrollPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Gun NPC Attack",
-                type = "action",
-                onClick = function()
-                    Menu.GunNPCAttackPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Particle Effects On Player",
-                type = "action",
-                onClick = function()
-                    Menu.PlayerList.submenu = "particleeffects"
-                    Menu.RefreshOnlinePlayers()
-                end
-            },
-            {
-                name = "HEX Player",
-                type = "action",
-                onClick = function()
-                    Menu.HEXPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Launch Player",
-                type = "action",
-                onClick = function()
-                    Menu.LaunchPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Infinite Jump Bug",
-                type = "action",
-                onClick = function()
-                    Menu.InfiniteJumpBug(selectedPlayer)
-                end
-            },
-            {
-                name = "Clone NPC Attack",
-                type = "action",
-                onClick = function()
-                    Menu.CloneNPCAttackPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Freeze Player",
-                type = "action",
-                onClick = function()
-                    Menu.FreezePlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Vehicle Rain On Player",
-                type = "action",
-                onClick = function()
-                    Menu.VehicleRainOnPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Cage Player",
-                type = "action",
-                onClick = function()
-                    Menu.CagePlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Stuck In Air",
-                type = "action",
-                onClick = function()
-                    Menu.StuckInAir(selectedPlayer)
-                end
-            },
-            {
-                name = "Fake Lag",
-                type = "action",
-                onClick = function()
-                    Menu.RealLagTroll(selectedPlayer)
-                end
-            },
-            {
-                name = "Blind Player",
-                type = "action",
-                onClick = function()
-                    Menu.BlindPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Horn Spam",
-                type = "action",
-                onClick = function()
-                    Menu.HornSpam(selectedPlayer)
-                end
-            },
-            {
-                name = "Car Spin Trap",
-                type = "action",
-                onClick = function()
-                    Menu.CarSpinTrap(selectedPlayer)
-                end
-            },
-            {
-                name = "Ramp All Vehicles",
-                type = "action",
-                onClick = function()
-                    Menu.RampAllVehicles()
-                end
-            },
-            {
-                name = "FIB Building All Vehicles",
-                type = "action",
-                onClick = function()
-                    Menu.FIBAllVehicles()
-                end
-            },
-            {
-                name = "Magnet Cars",
-                type = "action",
-                onClick = function()
-                    Menu.MagnetCars()
-                end
-            },
-            {
-                name = "Flip All Vehicles",
-                type = "action",
-                onClick = function()
-                    Menu.FlipAllVehicles()
-                end
-            },
-            {
-                name = "Spin Cars Tornado",
-                type = "action",
-                onClick = function()
-                    Menu.SpinCarsTornado()
-                end
-            },
-            {
-                name = Menu.IsPiggybacking and "Stop Piggyback" or "Piggyback On Player",
-                type = "action",
-                onClick = function()
-                    Menu.TogglePiggybackOnPlayer(selectedPlayer)
-                    Menu.RefreshOnlinePlayers()
-                end
-            },
-            {
-                name = Menu.HexAllIncludeSelf and "HEX All Players (Skip Self)" or "HEX All Players",
-                type = "action",
-                onClick = function()
-                    Menu.HEXAllPlayers()
-                end
-            },
-            {
-                name = "Toggle HEX Include Self",
-                type = "toggle",
-                value = Menu.HexAllIncludeSelf,
-                onClick = function(value)
-                    Menu.HexAllIncludeSelf = value == true
-                    Menu.RefreshOnlinePlayers()
-                end
-            },
-            {
-                isSeparator = true,
-                separatorText = "PLAYER DETAILS"
-            },
-            {
-                name = "Teleport To Player",
-                type = "action",
-                onClick = function()
-                    Menu.TeleportToPlayer(selectedPlayer)
-                end
-            },
-            { name = "Name: " .. tostring(selectedPlayer.name or "Unknown"), type = "action", onClick = function() end },
-            { name = "Server ID: " .. tostring(selectedPlayer.id or "N/A"), type = "action", onClick = function() end },
-            { name = "Client ID: " .. tostring(selectedPlayer.clientId or "N/A"), type = "action", onClick = function() end },
-            { name = coordText, type = "action", onClick = function() end }
-        }
     else
-        trollItems = {
+        local shownPlayers = Menu.PlayerList.filteredPlayers or {}
+
+        items = {
+            {
+                name = "Search Players",
+                type = "action",
+                onClick = function()
+                    Menu.OpenPlayerSearch()
+                end
+            },
+            {
+                name = "Clear Search",
+                type = "action",
+                onClick = function()
+                    Menu.PlayerList.searchQuery = ""
+                    Menu.ApplyPlayerSearch()
+                    Menu.RefreshOnlinePlayers()
+                end
+            },
             {
                 isSeparator = true,
-                separatorText = (#tostring(Menu.PlayerList.searchQuery or "") > 0) and ("TROLL: " .. tostring(Menu.PlayerList.searchQuery)) or "SELECT PLAYER TO TROLL"
+                separatorText = (#tostring(Menu.PlayerList.searchQuery or "") > 0) and ("RESULTS: " .. tostring(Menu.PlayerList.searchQuery)) or "ONLINE PLAYERS"
             }
         }
 
         for _, p in ipairs(shownPlayers) do
-            table.insert(trollItems, {
+            table.insert(items, {
                 name = "[" .. tostring(p.id) .. "] " .. tostring(p.name),
                 type = "action",
                 onClick = function()
-                    Menu.PlayerList.selectedPlayer = p
-                    Menu.PlayerList.submenu = "troll_actions"
-                    Menu.RefreshOnlinePlayers()
+                    Menu.OpenPlayerInfo(p)
                 end
             })
         end
 
         if #shownPlayers == 0 then
-            table.insert(trollItems, {
+            table.insert(items, {
                 name = "No players found",
                 type = "action",
                 onClick = function() end
@@ -5978,9 +6030,7 @@ function Menu.RefreshOnlinePlayers()
             if cat and tostring(cat.name or "") == "Online" and cat.tabs then
                 for _, tab in ipairs(cat.tabs) do
                     if tab and tostring(tab.name or "") == "Players" then
-                        tab.items = playersItems
-                    elseif tab and tostring(tab.name or "") == "Troll" then
-                        tab.items = trollItems
+                        tab.items = items
                     end
                 end
             end
@@ -6158,201 +6208,297 @@ function Menu.CarSpinTrap(playerData)
     end
 end
 
+return Menu
 
--- ===== SOUTH STYLE SIMPLE LUA UI OVERRIDES =====
-Menu.DiscordInvite = Menu.DiscordInvite or "discord.gg/zP8MaFP9uM"
-Menu.BrandName = Menu.BrandName or "SouthyV2"
+-- ============================================
+-- SOUTH STYLE SIMPLE UI OVERRIDE
+-- ============================================
+Menu.UI = Menu.UI or {}
+Menu.UI.Version = "south-simple-1.0"
 
-function Menu.GetSouthIcon(itemName)
-    local n = string.lower(tostring(itemName or ""))
-    if n:find("self") then return "◎" end
-    if n:find("online") or n:find("player") then return "◉" end
-    if n:find("vehicle") then return "▣" end
-    if n:find("visual") or n:find("esp") then return "◌" end
-    if n:find("weapon") then return "▶" end
-    if n:find("misc") then return "◆" end
-    if n:find("exploit") or n:find("troll") then return "✦" end
-    if n:find("setting") then return "✹" end
-    return "•"
+Menu.Position.x = 600
+Menu.Position.y = 120
+Menu.Position.width = 320
+Menu.Position.itemHeight = 42
+Menu.Position.mainMenuHeight = 40
+Menu.Position.headerHeight = 116
+Menu.Position.footerHeight = 34
+Menu.Position.footerSpacing = 6
+Menu.Position.mainMenuSpacing = 0
+Menu.Position.footerRadius = 0
+Menu.Position.itemRadius = 0
+Menu.Position.headerRadius = 0
+Menu.Position.scrollbarWidth = 0
+Menu.Position.scrollbarPadding = 0
+Menu.Scale = 1.0
+Menu.ItemsPerPage = 8
+Menu.ScrollbarPosition = 2
+Menu.Banner.height = 116
+Menu.CurrentTheme = "Red"
+Menu.ApplyTheme("Red")
+
+local function southClamp(v, mn, mx)
+    if v < mn then return mn end
+    if v > mx then return mx end
+    return v
 end
 
-function Menu.GetSouthLayout()
-    local scaledPos = Menu.GetScaledPosition()
-    local scale = Menu.Scale or 1.0
-    local x = scaledPos.x
-    local y = scaledPos.y
-    local width = scaledPos.width - 1
-    local bannerHeight = Menu.Banner.enabled and (Menu.Banner.height * scale) or (110 * scale)
-    local barHeight = 34 * scale
-    local rowHeight = scaledPos.itemHeight
-    local gap = 8 * scale
-    local footerGap = 8 * scale
-    local footerHeight = 28 * scale
-    local visibleRows = 0
+local function southColor(r, g, b, a)
+    return {r = r, g = g, b = b, a = a or 255}
+end
 
+Menu.SouthStyle = {
+    bg = southColor(3, 3, 3, 235),
+    row = southColor(7, 7, 7, 225),
+    rowAlt = southColor(10, 10, 10, 225),
+    rowSelected = southColor(196, 18, 18, 245),
+    rowSelectedGlow = southColor(255, 70, 70, 235),
+    headerLine = southColor(188, 16, 16, 255),
+    titleBg = southColor(26, 26, 30, 245),
+    footerBg = southColor(22, 22, 26, 240),
+    white = southColor(245, 245, 245, 255),
+    dim = southColor(200, 200, 200, 220),
+    muted = southColor(155, 155, 155, 220),
+    black = southColor(0, 0, 0, 255)
+}
+
+function Menu.StripColorCodes(text)
+    text = tostring(text or "")
+    text = text:gsub("~.-~", "")
+    text = text:gsub("%^[0-9]", "")
+    return text
+end
+
+function Menu.GetHeaderTitle()
     if Menu.OpenedCategory then
-        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory] or nil
-        if category and category.tabs and category.tabs[Menu.CurrentTab] and category.tabs[Menu.CurrentTab].items then
-            visibleRows = math.min(Menu.ItemsPerPage, #category.tabs[Menu.CurrentTab].items)
+        local cat = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        if cat then return Menu.StripColorCodes(cat.name) end
+    end
+    if Menu.Categories and Menu.Categories[1] and Menu.Categories[1].name then
+        return Menu.StripColorCodes(Menu.Categories[1].name)
+    end
+    return "Main"
+end
+
+function Menu.GetCurrentItemCount()
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        if category and category.hasTabs and category.tabs then
+            local tab = category.tabs[Menu.CurrentTab]
+            if tab and tab.items then
+                return #tab.items
+            end
         end
+        return 0
+    end
+    if Menu.Categories then
+        return math.max(0, #Menu.Categories - 1)
+    end
+    return 0
+end
+
+function Menu.GetRowIcon(label, isMainCategory, item)
+    local name = string.lower(Menu.StripColorCodes(label))
+    if isMainCategory then
+        if name:find("self") then return "@" end
+        if name:find("online") or name:find("player") then return "#" end
+        if name:find("vehicle") or name:find("car") then return "V" end
+        if name:find("visual") or name:find("esp") then return "O" end
+        if name:find("weapon") then return "W" end
+        if name:find("misc") then return "+" end
+        if name:find("exploit") or name:find("troll") then return "!" end
+        if name:find("setting") then return "*" end
+        if name:find("teleport") then return "T" end
+        return ">"
+    end
+    if item and item.type == "toggle" then return item.value and "1" or "0" end
+    if item and item.type == "slider" then return "=" end
+    if item and item.type == "selector" then return "<" end
+    if name:find("search") then return "?" end
+    if name:find("back") then return "<" end
+    if name:find("discord") then return "D" end
+    return ">"
+end
+
+function Menu.DrawSouthIcon(x, y, size, icon, selected)
+    local st = Menu.SouthStyle
+    local bg = selected and st.rowSelected or st.titleBg
+    local fg = st.white
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x, y, size, size, bg.r/255, bg.g/255, bg.b/255, 0.95, 6)
     else
-        local totalCategories = math.max(0, (Menu.Categories and #Menu.Categories or 0) - 1)
-        visibleRows = math.min(Menu.ItemsPerPage, totalCategories)
+        Menu.DrawRoundedRect(x, y, size, size, bg.r, bg.g, bg.b, bg.a, 6)
     end
-
-    local itemsY = y + bannerHeight + barHeight
-    local itemsHeight = visibleRows * rowHeight
-    local footerY = itemsY + itemsHeight
-    local totalHeight = (footerY + footerGap + footerHeight) - y
-
-    return {
-        x = x,
-        y = y,
-        width = width,
-        bannerHeight = bannerHeight,
-        barY = y + bannerHeight,
-        barHeight = barHeight,
-        itemsY = itemsY,
-        rowHeight = rowHeight,
-        itemsHeight = itemsHeight,
-        footerY = footerY + footerGap,
-        footerHeight = footerHeight,
-        totalHeight = totalHeight,
-        radius = 10 * scale,
-        innerRadius = 7 * scale,
-        scale = scale
-    }
-end
-
-function Menu.DrawSouthChevron(x, y, scale, color, alpha)
-    local s = 14 * scale
-    Menu.DrawText(x, y, "»", s, (color.r or 255) / 255.0, (color.g or 255) / 255.0, (color.b or 255) / 255.0, alpha or 1.0)
-end
-
-function Menu.DrawBackground()
-    local p = Menu.GetThemePalette()
-    local l = Menu.GetSouthLayout()
-
-    Menu.DrawSoftShadow(l.x + 2, l.y + 10, l.width - 4, l.totalHeight - 6, l.radius, 0.32, 18)
-    Menu.DrawRoundedPanel(l.x, l.barY, l.width, l.totalHeight - l.bannerHeight, { r = 0, g = 0, b = 0 }, 0.92, l.radius)
-    Menu.DrawFramedPanel(l.x, l.barY, l.width, l.totalHeight - l.bannerHeight, { r = 8, g = 8, b = 8 }, 0.92, { r = 70, g = 12, b = 12 }, 0.18, l.radius, 1)
-
-    if Menu.ShowSnowflakes then
-        for _, particle in ipairs(Menu.Particles or {}) do
-            particle.y = particle.y + particle.speedY
-            particle.x = particle.x + particle.speedX
-            if particle.y > 1.0 then
-                particle.y = 0.0
-                particle.x = math.random(0, 100) / 100
-            end
-            local px = l.x + (particle.x * l.width)
-            local py = l.barY + (particle.y * (l.totalHeight - l.bannerHeight))
-            if px >= l.x and px <= (l.x + l.width) and py >= l.barY and py <= (l.y + l.totalHeight) then
-                Menu.DrawRoundedPanel(px, py, particle.size, particle.size, p.white, 0.38, particle.size)
-            end
-        end
-    end
+    local iconSize = math.max(12, size * 0.45)
+    local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(icon, iconSize)) or (#icon * (iconSize * 0.45))
+    Menu.DrawText(x + (size/2) - (tw/2), y + (size/2) - (iconSize/2) - 1, icon, iconSize, fg.r/255, fg.g/255, fg.b/255, 1.0)
 end
 
 function Menu.DrawHeader()
-    local p = Menu.GetThemePalette()
-    local l = Menu.GetSouthLayout()
-    local scale = l.scale
+    local p = Menu.GetScaledPosition()
+    local st = Menu.SouthStyle
+    local x, y, width = p.x, p.y, p.width
+    local bannerH = Menu.Banner.height * (Menu.Scale or 1.0)
 
-    if Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
-        Susano.DrawImage(Menu.bannerTexture, l.x, l.y, l.width, l.bannerHeight, 1, 1, 1, 1, 0)
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x, y, width, bannerH, 0.02, 0.02, 0.03, 0.98, 0)
     else
-        Menu.DrawRoundedPanel(l.x, l.y, l.width, l.bannerHeight, { r = 6, g = 6, b = 6 }, 1.0, l.radius)
-        local steps = 40
-        for i = 0, steps - 1 do
-            local yy = l.y + (i * (l.bannerHeight / steps))
-            local h = math.ceil(l.bannerHeight / steps)
-            local f = i / math.max(1, steps - 1)
-            local rr = 35 + math.floor((1.0 - f) * 80)
-            local gg = 5 + math.floor((1.0 - f) * 8)
-            local bb = 5 + math.floor((1.0 - f) * 8)
-            Menu.DrawRect(l.x, yy, l.width, h, rr, gg, bb, 255)
-        end
-        Menu.DrawRoundedPanel(l.x + (12 * scale), l.y + (14 * scale), l.width - (24 * scale), 2 * scale, { r = 255, g = 40, b = 40 }, 0.65, 1)
-        Menu.DrawRoundedPanel(l.x + (18 * scale), l.y + (26 * scale), l.width - (36 * scale), 2 * scale, { r = 255, g = 30, b = 30 }, 0.42, 1)
-        Menu.DrawRoundedPanel(l.x + (26 * scale), l.y + (38 * scale), l.width - (52 * scale), 2 * scale, { r = 255, g = 24, b = 24 }, 0.24, 1)
+        Menu.DrawRect(x, y, width, bannerH, 5, 5, 7, 250)
     end
 
-    Menu.DrawRoundedPanel(l.x, l.barY, l.width, l.barHeight, { r = 18, g = 18, b = 18 }, 0.96, 0)
-    Menu.DrawRoundedPanel(l.x, l.barY - (2 * scale), l.width, 2 * scale, { r = 200, g = 20, b = 20 }, 1.0, 0)
+    if Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+        Susano.DrawImage(Menu.bannerTexture, x, y, width, bannerH - 2, 1, 1, 1, 1, 0)
+    else
+        local steps = 24
+        for i = 0, steps - 1 do
+            local yy = y + (i * ((bannerH - 2) / steps))
+            local alpha = 0.35 + (0.45 * (1.0 - (i / steps)))
+            if Susano and Susano.DrawRectFilled then
+                Susano.DrawRectFilled(x, yy, width, (bannerH - 2) / steps, 0.08, 0.01, 0.01, alpha, 0)
+            end
+        end
+        Menu.DrawText(x + width/2 - 18, y + 16, "S", 54, 1.0, 1.0, 1.0, 1.0)
+    end
+
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x, y + bannerH - 2, width, 2, st.headerLine.r/255, st.headerLine.g/255, st.headerLine.b/255, 1.0, 0)
+        Susano.DrawRectFilled(x, y + bannerH, width, p.mainMenuHeight, st.titleBg.r/255, st.titleBg.g/255, st.titleBg.b/255, 0.97, 0)
+    else
+        Menu.DrawRect(x, y + bannerH - 2, width, 2, st.headerLine.r, st.headerLine.g, st.headerLine.b, 255)
+        Menu.DrawRect(x, y + bannerH, width, p.mainMenuHeight, st.titleBg.r, st.titleBg.g, st.titleBg.b, 248)
+    end
 
     local title = Menu.GetHeaderTitle()
-    local titleSize = 21
-    local titleW = Menu.GetTextWidth(title, titleSize)
-    Menu.DrawText(l.x + (l.width / 2) - (titleW / 2), l.barY + (l.barHeight / 2) - (9 * scale), title, titleSize, p.text.r / 255.0, p.text.g / 255.0, p.text.b / 255.0, 1.0)
+    local titleSize = 22
+    local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(title, titleSize)) or (#title * 10)
+    Menu.DrawText(x + (width/2) - (tw/2), y + bannerH + 8, title, titleSize, 1.0, 1.0, 1.0, 1.0)
+end
+
+function Menu.DrawSimpleSeparator(x, y, width, itemHeight, item)
+    local st = Menu.SouthStyle
+    local text = Menu.StripColorCodes(item.separatorText or "")
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x, y, width, itemHeight, st.titleBg.r/255, st.titleBg.g/255, st.titleBg.b/255, 0.95, 0)
+    else
+        Menu.DrawRect(x, y, width, itemHeight, st.titleBg.r, st.titleBg.g, st.titleBg.b, 240)
+    end
+    local size = 13
+    local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(text, size)) or (#text * 7)
+    Menu.DrawText(x + (width/2) - (tw/2), y + (itemHeight/2) - 7, text, size, st.muted.r/255, st.muted.g/255, st.muted.b/255, 1.0)
+end
+
+function Menu.DrawSimpleValue(item, x, itemY, width, itemHeight)
+    local st = Menu.SouthStyle
+    local scale = Menu.Scale or 1.0
+    local rightPad = 14 * scale
+    local textY = itemY + itemHeight / 2 - (8 * scale)
+
+    if item.type == "toggle" then
+        local txt = item.value and "ON" or "OFF"
+        local clr = item.value and st.white or st.muted
+        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(txt, 16)) or (#txt * 8)
+        Menu.DrawText(x + width - rightPad - tw, textY, txt, 16, clr.r/255, clr.g/255, clr.b/255, 1.0)
+    elseif item.type == "slider" then
+        local currentValue = item.value or item.min or 0.0
+        local minValue = item.min or 0.0
+        local maxValue = item.max or 100.0
+        local percent = 0.0
+        if maxValue ~= minValue then percent = southClamp((currentValue - minValue) / (maxValue - minValue), 0.0, 1.0) end
+        local barW = 74 * scale
+        local barH = 6 * scale
+        local barX = x + width - rightPad - barW - 42 * scale
+        local barY = itemY + (itemHeight/2) - (barH/2)
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(barX, barY, barW, barH, 0.16, 0.16, 0.16, 1.0, 0)
+            Susano.DrawRectFilled(barX, barY, barW * percent, barH, st.rowSelected.r/255, st.rowSelected.g/255, st.rowSelected.b/255, 1.0, 0)
+        else
+            Menu.DrawRect(barX, barY, barW, barH, 40, 40, 40, 255)
+            Menu.DrawRect(barX, barY, barW * percent, barH, st.rowSelected.r, st.rowSelected.g, st.rowSelected.b, 255)
+        end
+        local txt = string.format("%.0f", currentValue)
+        Menu.DrawText(x + width - rightPad - 30 * scale, textY, txt, 15, 1, 1, 1, 1)
+    elseif (item.type == "selector" or item.type == "toggle_selector") and item.options then
+        local idx = item.selected or 1
+        local txt = tostring(item.options[idx] or "")
+        local draw = "< " .. txt .. " >"
+        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(draw, 15)) or (#draw * 7)
+        Menu.DrawText(x + width - rightPad - tw, textY, draw, 15, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+    elseif item.type == "action" then
+        Menu.DrawText(x + width - rightPad - 12, textY, ">>", 18, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+    end
 end
 
 function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
-    local p = Menu.GetThemePalette()
+    local st = Menu.SouthStyle
     local scale = Menu.Scale or 1.0
-
     if item.isSeparator then
-        Menu.DrawRoundedPanel(x, itemY, width, itemHeight, { r = 10, g = 10, b = 10 }, 0.85, 0)
-        local label = tostring(item.separatorText or "SECTION")
-        local w = Menu.GetTextWidth(label, 12)
-        Menu.DrawText(x + (width / 2) - (w / 2), itemY + (itemHeight / 2) - (6 * scale), label, 12, p.muted.r / 255.0, p.muted.g / 255.0, p.muted.b / 255.0, 0.9)
+        Menu.DrawSimpleSeparator(x, itemY, width, itemHeight, item)
         return
     end
 
-    Menu.DrawRoundedPanel(x, itemY, width, itemHeight, { r = 4, g = 4, b = 4 }, 0.96, 0)
-
-    if isSelected then
-        Menu.DrawRoundedPanel(x, itemY, width, itemHeight, { r = 210, g = 16, b = 16 }, 0.96, 0)
-        Menu.DrawRoundedPanel(x, itemY, 3 * scale, itemHeight, { r = 255, g = 255, b = 255 }, 0.96, 0)
+    local bg = isSelected and st.rowSelected or st.row
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(x, itemY, width, itemHeight - 1, bg.r/255, bg.g/255, bg.b/255, 0.98, 0)
+    else
+        Menu.DrawRect(x, itemY, width, itemHeight - 1, bg.r, bg.g, bg.b, bg.a)
     end
 
-    local iconText = Menu.GetSouthIcon(item.name)
-    local iconX = x + (14 * scale)
-    local textY = itemY + (itemHeight / 2) - (8 * scale)
-    local textColor = isSelected and p.white or { r = 236, g = 236, b = 236 }
-    local subColor = isSelected and p.white or p.muted
+    local iconSize = 24 * scale
+    local iconX = x + (16 * scale)
+    local iconY = itemY + (itemHeight/2) - (iconSize/2)
+    local icon = Menu.GetRowIcon(item.name, false, item)
+    Menu.DrawSouthIcon(iconX, iconY, iconSize, icon, isSelected)
 
-    Menu.DrawText(iconX, textY, iconText, 17, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 1.0)
-    Menu.DrawText(iconX + (22 * scale), textY, item.name or "Option", 17, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 1.0)
+    local txt = Menu.StripColorCodes(item.name)
+    local textX = iconX + iconSize + (10 * scale)
+    local textY = itemY + itemHeight/2 - (9 * scale)
+    Menu.DrawText(textX, textY, txt, 17, 1.0, 1.0, 1.0, 1.0)
+    Menu.DrawSimpleValue(item, x, itemY, width, itemHeight)
+end
 
-    if item.type == "toggle" or item.type == "toggle_selector" then
-        local toggleText = item.value and "ON" or "OFF"
-        local tw = Menu.GetTextWidth(toggleText, 12)
-        Menu.DrawText(x + width - (42 * scale) - tw, itemY + (itemHeight / 2) - (6 * scale), toggleText, 12, subColor.r / 255.0, subColor.g / 255.0, subColor.b / 255.0, 0.95)
-    elseif item.type == "selector" and item.options then
-        local selectedIndex = item.selected or 1
-        local selectedOption = tostring(item.options[selectedIndex] or "")
-        local maxW = math.min(90 * scale, Menu.GetTextWidth(selectedOption, 13))
-        Menu.DrawText(x + width - (44 * scale) - maxW, itemY + (itemHeight / 2) - (6 * scale), selectedOption, 13, subColor.r / 255.0, subColor.g / 255.0, subColor.b / 255.0, 0.95)
-    elseif item.type == "slider" then
-        local val = item.value or item.min or 0
-        local txt = string.format("%.0f", val)
-        local tw = Menu.GetTextWidth(txt, 12)
-        Menu.DrawText(x + width - (44 * scale) - tw, itemY + (itemHeight / 2) - (6 * scale), txt, 12, subColor.r / 255.0, subColor.g / 255.0, subColor.b / 255.0, 0.95)
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    if not category or not category.tabs then return end
+    local st = Menu.SouthStyle
+    local tabCount = #category.tabs
+    if tabCount < 1 then return end
+    local tabW = width / tabCount
+    for i, tab in ipairs(category.tabs) do
+        local tx = x + ((i - 1) * tabW)
+        local sel = (i == Menu.CurrentTab)
+        local bg = sel and st.rowSelected or st.titleBg
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(tx, startY, tabW - 1, tabHeight, bg.r/255, bg.g/255, bg.b/255, sel and 0.98 or 0.95, 0)
+        else
+            Menu.DrawRect(tx, startY, tabW - 1, tabHeight, bg.r, bg.g, bg.b, bg.a)
+        end
+        local txt = Menu.StripColorCodes(tab.name)
+        local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(txt, 15)) or (#txt * 7)
+        Menu.DrawText(tx + (tabW/2) - (tw/2), startY + (tabHeight/2) - 8, txt, 15, 1, 1, 1, 1)
     end
-
-    Menu.DrawSouthChevron(x + width - (24 * scale), itemY + (itemHeight / 2) - (8 * scale), scale, subColor, 0.95)
 end
 
 function Menu.DrawCategories()
-    local p = Menu.GetThemePalette()
-    local l = Menu.GetSouthLayout()
-    local x = l.x
-    local width = l.width
-    local itemHeight = l.rowHeight
-    local itemsY = l.itemsY
+    local p = Menu.GetScaledPosition()
+    local st = Menu.SouthStyle
+    local scale = Menu.Scale or 1.0
+    local x = p.x
+    local headerEndY = p.y + (Menu.Banner.height * scale) + p.mainMenuHeight
+    local itemStartY = headerEndY
+    local width = p.width
+    local itemHeight = p.itemHeight
 
     if Menu.OpenedCategory then
         local category = Menu.Categories[Menu.OpenedCategory]
-        if not category or not category.hasTabs or not category.tabs then
-            Menu.OpenedCategory = nil
-            return
+        if not category then return end
+
+        if category.hasTabs and category.tabs and #category.tabs > 1 then
+            Menu.DrawTabs(category, x, itemStartY, width, p.mainMenuHeight)
+            itemStartY = itemStartY + p.mainMenuHeight
         end
 
-        local currentTab = category.tabs[Menu.CurrentTab]
-        if not currentTab or not currentTab.items then return end
-
-        local totalItems = #currentTab.items
+        local tab = category.tabs and category.tabs[Menu.CurrentTab]
+        local items = (tab and tab.items) or {}
+        local totalItems = #items
         local maxVisible = Menu.ItemsPerPage
         if Menu.CurrentItem > Menu.ItemScrollOffset + maxVisible then
             Menu.ItemScrollOffset = Menu.CurrentItem - maxVisible
@@ -6362,56 +6508,77 @@ function Menu.DrawCategories()
 
         for displayIndex = 1, math.min(maxVisible, totalItems) do
             local itemIndex = displayIndex + Menu.ItemScrollOffset
-            if itemIndex <= totalItems then
-                local itemY = itemsY + ((displayIndex - 1) * itemHeight)
-                Menu.DrawItem(x, itemY, width, itemHeight, currentTab.items[itemIndex], itemIndex == Menu.CurrentItem)
+            local item = items[itemIndex]
+            if item then
+                local yy = itemStartY + ((displayIndex - 1) * itemHeight)
+                Menu.DrawItem(x, yy, width, itemHeight, item, itemIndex == Menu.CurrentItem)
             end
-        end
-
-        if totalItems > maxVisible then
-            Menu.DrawScrollbar(x, itemsY, math.min(maxVisible, totalItems) * itemHeight, Menu.CurrentItem, totalItems, false, width)
         end
         return
     end
 
-    local totalCategories = math.max(0, (#(Menu.Categories or {}) - 1))
+    local categories = Menu.Categories or {}
+    local total = math.max(0, #categories - 1)
     local maxVisible = Menu.ItemsPerPage
-
     if Menu.CurrentCategory > Menu.CategoryScrollOffset + maxVisible + 1 then
         Menu.CategoryScrollOffset = Menu.CurrentCategory - maxVisible - 1
     elseif Menu.CurrentCategory <= Menu.CategoryScrollOffset + 1 then
         Menu.CategoryScrollOffset = math.max(0, Menu.CurrentCategory - 2)
     end
 
-    for displayIndex = 1, math.min(maxVisible, totalCategories) do
+    for displayIndex = 1, math.min(maxVisible, total) do
         local categoryIndex = displayIndex + Menu.CategoryScrollOffset + 1
-        if categoryIndex <= #Menu.Categories then
-            local itemY = itemsY + ((displayIndex - 1) * itemHeight)
-            local item = Menu.Categories[categoryIndex]
-            Menu.DrawItem(x, itemY, width, itemHeight, { name = item.name, type = "action" }, categoryIndex == Menu.CurrentCategory)
-        end
-    end
+        local category = categories[categoryIndex]
+        if category then
+            local yy = itemStartY + ((displayIndex - 1) * itemHeight)
+            local selected = (categoryIndex == Menu.CurrentCategory)
+            local bg = selected and st.rowSelected or st.row
+            if Susano and Susano.DrawRectFilled then
+                Susano.DrawRectFilled(x, yy, width, itemHeight - 1, bg.r/255, bg.g/255, bg.b/255, 0.98, 0)
+            else
+                Menu.DrawRect(x, yy, width, itemHeight - 1, bg.r, bg.g, bg.b, bg.a)
+            end
 
-    if totalCategories > maxVisible then
-        Menu.DrawScrollbar(x, itemsY, math.min(maxVisible, totalCategories) * itemHeight, Menu.CurrentCategory - 1, totalCategories, true, width)
+            local iconSize = 24 * scale
+            local iconX = x + (16 * scale)
+            local iconY = yy + (itemHeight/2) - (iconSize/2)
+            Menu.DrawSouthIcon(iconX, iconY, iconSize, Menu.GetRowIcon(category.name, true), selected)
+
+            local txt = Menu.StripColorCodes(category.name)
+            local textX = iconX + iconSize + (10 * scale)
+            local textY = yy + itemHeight/2 - (9 * scale)
+            Menu.DrawText(textX, textY, txt, 17, 1.0, 1.0, 1.0, 1.0)
+            Menu.DrawText(x + width - (28 * scale), textY, ">>", 18, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+        end
     end
 end
 
 function Menu.DrawFooter()
-    local p = Menu.GetThemePalette()
-    local l = Menu.GetSouthLayout()
-    local scale = l.scale
-    local footerY = l.footerY
-
-    Menu.DrawRoundedPanel(l.x, footerY, l.width, l.footerHeight, { r = 22, g = 22, b = 22 }, 0.96, 0)
-    Menu.DrawRoundedPanel(l.x, footerY, 22 * scale, l.footerHeight, { r = 200, g = 18, b = 18 }, 0.92, 0)
-
-    local leftText = tostring(Menu.DiscordInvite or "discord.gg/yourmenu")
-    local rightText = tostring(Menu.BrandName or "SouthyV2")
-    Menu.DrawText(l.x + (28 * scale), footerY + (l.footerHeight / 2) - (7 * scale), leftText, 13, p.text.r / 255.0, p.text.g / 255.0, p.text.b / 255.0, 0.98)
-
-    local rightW = Menu.GetTextWidth(rightText, 13)
-    Menu.DrawText(l.x + l.width - rightW - (12 * scale), footerY + (l.footerHeight / 2) - (7 * scale), rightText, 13, p.text.r / 255.0, p.text.g / 255.0, p.text.b / 255.0, 0.98)
+    local p = Menu.GetScaledPosition()
+    local scale = Menu.Scale or 1.0
+    local st = Menu.SouthStyle
+    local totalRows = 0
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory]
+        local tab = category and category.tabs and category.tabs[Menu.CurrentTab]
+        local items = (tab and tab.items) or {}
+        totalRows = math.min(Menu.ItemsPerPage, #items)
+        if category and category.hasTabs and category.tabs and #category.tabs > 1 then
+            totalRows = totalRows + 1
+        end
+    else
+        totalRows = math.min(Menu.ItemsPerPage, math.max(0, #Menu.Categories - 1))
+    end
+    local footerY = p.y + (Menu.Banner.height * scale) + p.mainMenuHeight + (totalRows * p.itemHeight) + p.footerSpacing
+    local footerText = tostring(Menu.DiscordInvite or "discord.gg/southmenu")
+    local rightText = "SouthyV2"
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(p.x, footerY, p.width, p.footerHeight, st.footerBg.r/255, st.footerBg.g/255, st.footerBg.b/255, 0.97, 0)
+    else
+        Menu.DrawRect(p.x, footerY, p.width, p.footerHeight, st.footerBg.r, st.footerBg.g, st.footerBg.b, st.footerBg.a)
+    end
+    Menu.DrawSouthIcon(p.x + 10, footerY + 5, 24, "S", false)
+    Menu.DrawText(p.x + 42, footerY + 8, footerText, 14, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
+    local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(rightText, 14)) or (#rightText * 7)
+    Menu.DrawText(p.x + p.width - tw - 14, footerY + 8, rightText, 14, st.white.r/255, st.white.g/255, st.white.b/255, 1.0)
 end
-
-return Menu
