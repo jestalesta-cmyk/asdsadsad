@@ -248,8 +248,18 @@ function Menu.DrawText(x, y, text, size_px, r, g, b, a)
         mult = tuning.footerMultiplier or mult
     end
 
-    size_px = math.floor(((size_px or 16) * scale * mult) + 0.5)
-    if size_px < 11 then size_px = 11 end
+    size_px = ((size_px or 16) * scale * mult)
+    size_px = math.floor(size_px + 0.5)
+
+    if original >= 19 then
+        if size_px < 16 then size_px = 16 end
+    elseif original >= 15 then
+        if size_px < 13 then size_px = 13 end
+    elseif original >= 13 then
+        if size_px < 12 then size_px = 12 end
+    else
+        if size_px < 11 then size_px = 11 end
+    end
 
     text = Menu.StripColorCodes and Menu.StripColorCodes(text) or tostring(text or "")
     r = r or 1.0
@@ -409,7 +419,7 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
     if Susano and Susano.DrawRectFilled then
         Susano.DrawRectFilled(innerX, containerY, innerWidth, containerH, 10/255, 14/255, 24/255, 0.78, 10 * scale)
         if Menu.UIEffects and Menu.UIEffects.glass then
-            Susano.DrawRectFilled(innerX + 1, containerY + 1, innerWidth - 2, containerH * 0.42, 1, 1, 1, 0.04, 9 * scale)
+            Susano.DrawRectFilled(innerX + 1, containerY + 1, innerWidth - 2, containerH * 0.35, 1, 1, 1, 0.015, 9 * scale)
         end
     else
         Menu.DrawRoundedRect(innerX, containerY, innerWidth, containerH, 10, 14, 24, 200, 10 * scale)
@@ -446,7 +456,7 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
 
     if Susano and Susano.DrawRectFilled then
         Susano.DrawRectFilled(Menu.TabSelectorX, containerY, Menu.TabSelectorWidth, containerH, 199/255, 22/255, 30/255, 0.95, 9 * scale)
-        Susano.DrawRectFilled(Menu.TabSelectorX, containerY + 1, Menu.TabSelectorWidth, containerH * 0.42, 1.0, 1.0, 1.0, 0.06, 9 * scale)
+        Susano.DrawRectFilled(Menu.TabSelectorX, containerY + 1, Menu.TabSelectorWidth, containerH * 0.30, 1.0, 1.0, 1.0, 0.018, 9 * scale)
         Susano.DrawRectFilled(Menu.TabSelectorX, containerY + containerH - (3 * scale), Menu.TabSelectorWidth, 3 * scale, 1.0, 0.33, 0.36, 1.0, 0)
     end
 
@@ -459,7 +469,7 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
             if Susano and Susano.DrawRectFilled then
                 Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, 14/255, 19/255, 32/255, 0.72, 9 * scale)
                 if Menu.UIEffects and Menu.UIEffects.glass then
-                    Susano.DrawRectFilled(tabX + 1, containerY + 1, currentTabWidth - 2, containerH * 0.42, 1, 1, 1, 0.03, 8 * scale)
+                    Susano.DrawRectFilled(tabX + 1, containerY + 1, currentTabWidth - 2, containerH * 0.28, 1, 1, 1, 0.012, 8 * scale)
                 end
             else
                 Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, 14, 19, 32, 184, 9 * scale)
@@ -6301,11 +6311,11 @@ Menu.UIEffects = {
 
 Menu.FontTuning = {
     enabled = true,
-    sizeMultiplier = 0.92,
-    headerMultiplier = 0.90,
-    tabMultiplier = 0.90,
-    itemMultiplier = 0.90,
-    footerMultiplier = 0.88
+    sizeMultiplier = 0.84,
+    headerMultiplier = 0.82,
+    tabMultiplier = 0.84,
+    itemMultiplier = 0.83,
+    footerMultiplier = 0.82
 }
 
 
@@ -6434,10 +6444,10 @@ function Menu.DrawBackground()
             local steps = 22
             for i = 0, steps - 1 do
                 local yy = y + 2 + (i * ((panelH - 4) / steps))
-                local alpha = 0.022 + ((1.0 - (i / steps)) * 0.018)
+                local alpha = 0.008 + ((1.0 - (i / steps)) * 0.006)
                 Susano.DrawRectFilled(x + 2, yy, w - 4, ((panelH - 4) / steps), 1.0, 1.0, 1.0, alpha, 10)
             end
-            Susano.DrawRectFilled(x + 1, y + 1, w - 2, 1, 1.0, 1.0, 1.0, 0.08, 0)
+            Susano.DrawRectFilled(x + 1, y + 1, w - 2, 1, 1.0, 1.0, 1.0, 0.02, 0)
         end
     end
 end
@@ -6556,7 +6566,7 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
         end
         if Susano and Susano.DrawRectFilled then
             Susano.DrawRectFilled(rowX - 1, Menu.SelectorGlowY - 1, rowW + 2, rowH + 2, st.rowSelectedGlow.r/255, st.rowSelectedGlow.g/255, st.rowSelectedGlow.b/255, 0.10, 10)
-            Susano.DrawRectFilled(rowX, Menu.SelectorGlowY, rowW, rowH, 1.0, 1.0, 1.0, 0.028, 9)
+            Susano.DrawRectFilled(rowX, Menu.SelectorGlowY, rowW, rowH, 1.0, 1.0, 1.0, 0.010, 9)
         end
     end
     Menu.DrawNextRoundRect(rowX, itemY + 2, rowW, rowH, bg, 8)
@@ -6698,7 +6708,7 @@ function Menu.DrawCategories()
                 end
                 if Susano and Susano.DrawRectFilled then
                     Susano.DrawRectFilled(rowX - 1, Menu.SelectorGlowY - 1, rowW + 2, rowH + 2, st.rowSelectedGlow.r/255, st.rowSelectedGlow.g/255, st.rowSelectedGlow.b/255, 0.10, 10)
-                    Susano.DrawRectFilled(rowX, Menu.SelectorGlowY, rowW, rowH, 1.0, 1.0, 1.0, 0.028, 9)
+                    Susano.DrawRectFilled(rowX, Menu.SelectorGlowY, rowW, rowH, 1.0, 1.0, 1.0, 0.010, 9)
                 end
             end
             Menu.DrawNextRoundRect(rowX, yy + 2, rowW, rowH, bg, 8)
