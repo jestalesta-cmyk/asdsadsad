@@ -6535,6 +6535,7 @@ end
 function Menu.DrawCategories()
     local p = Menu.GetScaledPosition()
     local scale = Menu.Scale or 1.0
+    local st = Menu.NextStyle
     local x = p.x
     local itemStartY = p.y + (Menu.Banner.height * scale) + p.mainMenuHeight
     local width = p.width
