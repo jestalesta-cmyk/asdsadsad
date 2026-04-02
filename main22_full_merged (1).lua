@@ -6208,8 +6208,6 @@ function Menu.CarSpinTrap(playerData)
     end
 end
 
-return Menu
-
 -- ============================================
 -- SOUTH STYLE SIMPLE UI OVERRIDE
 -- ============================================
@@ -6582,3 +6580,5 @@ function Menu.DrawFooter()
     local tw = (Susano and Susano.GetTextWidth and Susano.GetTextWidth(rightText, 14)) or (#rightText * 7)
     Menu.DrawText(p.x + p.width - tw - 14, footerY + 8, rightText, 14, st.white.r/255, st.white.g/255, st.white.b/255, 1.0)
 end
+
+return Menu
