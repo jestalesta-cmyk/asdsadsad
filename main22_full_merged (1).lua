@@ -5407,85 +5407,21 @@ end
 
 
 -- ===== SERVER INFO SYNC =====
-if not IsDuplicityVersion or not IsDuplicityVersion() then
-    RegisterNetEvent("menu:serverInfoSync")
-    AddEventHandler("menu:serverInfoSync", function(payload)
-        if type(payload) ~= "table" then return end
-        Menu.ServerInfo = Menu.ServerInfo or {}
-        Menu.ServerInfo.playerCount = tonumber(payload.playerCount) or 0
-        Menu.ServerInfo.endpoint = tostring(payload.endpoint or "Not available")
-        Menu.ServerInfo.resourceCount = tonumber(payload.resourceCount) or 0
-        Menu.ServerInfo.playerNames = type(payload.playerNames) == "table" and payload.playerNames or {}
-        Menu.ServerInfo.lastSync = GetGameTimer and GetGameTimer() or 0
-    end)
+RegisterNetEvent("menu:serverInfoSync")
+AddEventHandler("menu:serverInfoSync", function(payload)
+    if type(payload) ~= "table" then return end
+    Menu.ServerInfo = Menu.ServerInfo or {}
+    Menu.ServerInfo.playerCount = tonumber(payload.playerCount) or 0
+    Menu.ServerInfo.endpoint = tostring(payload.endpoint or "Not available")
+    Menu.ServerInfo.resourceCount = tonumber(payload.resourceCount) or 0
+    Menu.ServerInfo.playerNames = type(payload.playerNames) == "table" and payload.playerNames or {}
+    Menu.ServerInfo.lastSync = GetGameTimer and GetGameTimer() or 0
+end)
 
-    function Menu.RequestServerInfoSync()
-        if TriggerServerEvent then
-            TriggerServerEvent("menu:requestServerInfo")
-        end
+function Menu.RequestServerInfoSync()
+    if TriggerServerEvent then
+        TriggerServerEvent("menu:requestServerInfo")
     end
-else
-    RegisterNetEvent("menu:requestServerInfo")
-    AddEventHandler("menu:requestServerInfo", function()
-        local src = source
-        local names = {}
-        local players = GetPlayers and GetPlayers() or {}
-        for i = 1, #players do
-            local pid = players[i]
-            local nm = GetPlayerName and GetPlayerName(pid) or ("Player " .. tostring(pid))
-            names[#names + 1] = nm
-        end
-
-        local endpoint = "Not available"
-        if GetConvar then
-            endpoint = GetConvar("sv_endpointPrivacy", "")
-            if endpoint == "" then endpoint = GetConvar("sv_listingIPOverride", "") end
-            if endpoint == "" then endpoint = GetConvar("endpoint_add_tcp", "") end
-            if endpoint == "" then endpoint = GetConvar("endpoint_add_udp", "") end
-            if endpoint == "" then endpoint = GetConvar("sv_hostname", "") end
-            if endpoint == "" then endpoint = "Not available" end
-        end
-
-        local payload = {
-            playerCount = #players,
-            endpoint = endpoint,
-            resourceCount = GetNumResources and GetNumResources() or 0,
-            playerNames = names
-        }
-
-        TriggerClientEvent("menu:serverInfoSync", src, payload)
-    end)
-
-    CreateThread(function()
-        while true do
-            local names = {}
-            local players = GetPlayers and GetPlayers() or {}
-            for i = 1, #players do
-                local pid = players[i]
-                names[#names + 1] = GetPlayerName and GetPlayerName(pid) or ("Player " .. tostring(pid))
-            end
-
-            local endpoint = "Not available"
-            if GetConvar then
-                endpoint = GetConvar("sv_endpointPrivacy", "")
-                if endpoint == "" then endpoint = GetConvar("sv_listingIPOverride", "") end
-                if endpoint == "" then endpoint = GetConvar("endpoint_add_tcp", "") end
-                if endpoint == "" then endpoint = GetConvar("endpoint_add_udp", "") end
-                if endpoint == "" then endpoint = GetConvar("sv_hostname", "") end
-                if endpoint == "" then endpoint = "Not available" end
-            end
-
-            local payload = {
-                playerCount = #players,
-                endpoint = endpoint,
-                resourceCount = GetNumResources and GetNumResources() or 0,
-                playerNames = names
-            }
-
-            TriggerClientEvent("menu:serverInfoSync", -1, payload)
-            Wait(3000)
-        end
-    end)
 end
 
 -- ===== SERVER INFO CATEGORY =====
