@@ -1,5 +1,5 @@
 local Menu = {}
-Menu.Visible = false
+Menu.Visible = true
 Menu.CurrentCategory = 2
 Menu.CurrentPage = 1
 Menu.ItemsPerPage = 9
@@ -173,7 +173,7 @@ function Menu.ApplyTheme(themeName)
 end
 
 Menu.Position = {
-    x = 50,
+    x = 24,
     y = 100,
     width = 404,
     itemHeight = 38,
@@ -189,20 +189,15 @@ Menu.Position = {
     headerRadius = 14
 }
 Menu.Scale = 1.0
-Menu.TargetX = nil
-Menu.AnimatedX = nil
-Menu.OpenCloseLerp = 0.18
-Menu.SideOpen = true
-
+Menu.TargetX = 24
+Menu.HiddenX = -420
+Menu.AnimatedX = Menu.TargetX
+Menu.SlideSpeed = 0.18
 
 function Menu.GetScaledPosition()
     local scale = Menu.Scale or 1.0
-    local drawX = Menu.Position.x
-    if Menu.AnimatedX ~= nil then
-        drawX = Menu.AnimatedX
-    end
     return {
-        x = drawX,
+        x = Menu.AnimatedX or Menu.Position.x,
         y = Menu.Position.y,
         width = Menu.Position.width * scale,
         itemHeight = Menu.Position.itemHeight * scale,
@@ -2049,33 +2044,6 @@ function Menu.DrawBackground()
 end
 
 
-
-function Menu.UpdatePanelAnimation()
-    local screenWidth = 1920
-    if Susano and Susano.GetScreenWidth then
-        screenWidth = Susano.GetScreenWidth()
-    end
-
-    local panelWidth = (Menu.Position.width or 404) * (Menu.Scale or 1.0)
-    local targetX = Menu.Position.x or 50
-    local hiddenX = -panelWidth - 40
-
-    if Menu.TargetX == nil then
-        Menu.TargetX = targetX
-    end
-    if Menu.AnimatedX == nil then
-        Menu.AnimatedX = Menu.Visible and targetX or hiddenX
-    end
-
-    local goal = Menu.Visible and targetX or hiddenX
-    local speed = Menu.OpenCloseLerp or 0.18
-    Menu.AnimatedX = Menu.AnimatedX + ((goal - Menu.AnimatedX) * speed)
-
-    if math.abs(Menu.AnimatedX - goal) < 0.5 then
-        Menu.AnimatedX = goal
-    end
-end
-
 function Menu.Render()
     if Menu.TopLevelTabs and not Menu.Categories then
         Menu.UpdateCategoriesFromTopTab()
@@ -2090,6 +2058,18 @@ function Menu.Render()
         dt = GetFrameTime()
     end
     local animSpeed = 5.0 * dt
+
+    do
+        local targetX = Menu.Visible and (Menu.TargetX or Menu.Position.x) or (Menu.HiddenX or -((Menu.Position.width or 404) + 40))
+        if Menu.AnimatedX == nil then
+            Menu.AnimatedX = targetX
+        end
+        local slide = Menu.SlideSpeed or 0.18
+        Menu.AnimatedX = Menu.AnimatedX + (targetX - Menu.AnimatedX) * slide
+        if math.abs(Menu.AnimatedX - targetX) < 0.5 then
+            Menu.AnimatedX = targetX
+        end
+    end
 
     if Menu.IsLoading then
         Menu.LoadingBarAlpha = math.min(1.0, Menu.LoadingBarAlpha + animSpeed)
@@ -2115,11 +2095,7 @@ function Menu.Render()
         Menu.DrawKeybindsInterface(Menu.KeybindsInterfaceAlpha)
     end
 
-    Menu.UpdatePanelAnimation()
-
-    local shouldDrawPanel = Menu.Visible or (Menu.AnimatedX ~= nil and Menu.AnimatedX > -((Menu.Position.width or 404) * (Menu.Scale or 1.0)) - 35)
-
-    if shouldDrawPanel then
+    if Menu.Visible then
         if Menu.EditorMode and Susano and Susano.EnableOverlay then
             Susano.EnableOverlay(true)
         elseif not Menu.EditorMode and Susano and Susano.EnableOverlay then
