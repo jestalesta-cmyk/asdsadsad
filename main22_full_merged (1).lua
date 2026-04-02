@@ -173,8 +173,8 @@ function Menu.ApplyTheme(themeName)
 end
 
 Menu.Position = {
-    x = 19,
-    y = 119,
+    x = 50,
+    y = 100,
     width = 404,
     itemHeight = 38,
     mainMenuHeight = 34,
@@ -188,7 +188,6 @@ Menu.Position = {
     scrollbarPadding = 3,
     headerRadius = 14
 }
--- default left-side injected layout
 Menu.Scale = 1.0
 
 function Menu.GetScaledPosition()
@@ -6215,8 +6214,8 @@ end
 Menu.UI = Menu.UI or {}
 Menu.UI.Version = "south-simple-1.0"
 
-Menu.Position.x = 600
-Menu.Position.y = 120
+Menu.Position.x = 19
+Menu.Position.y = 119
 Menu.Position.width = 320
 Menu.Position.itemHeight = 42
 Menu.Position.mainMenuHeight = 40
