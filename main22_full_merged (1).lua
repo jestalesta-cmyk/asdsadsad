@@ -378,92 +378,66 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
     end
 
     local numTabs = #category.tabs
-    local tabWidth = width / numTabs
-    local currentX = x
+    if numTabs < 1 then return end
+
+    local outerPad = 8 * scale
+    local gap = 6 * scale
+    local innerX = x + outerPad
+    local innerWidth = width - (outerPad * 2)
+    local containerY = startY + (4 * scale)
+    local containerH = tabHeight - (8 * scale)
+
+    if Susano and Susano.DrawRectFilled then
+        Susano.DrawRectFilled(innerX, containerY, innerWidth, containerH, 10/255, 14/255, 24/255, 0.92, 10 * scale)
+    else
+        Menu.DrawRoundedRect(innerX, containerY, innerWidth, containerH, 10, 14, 24, 235, 10 * scale)
+    end
+
+    local totalGap = gap * (numTabs - 1)
+    local tabWidth = (innerWidth - totalGap) / numTabs
+    local currentX = innerX
 
     for i, tab in ipairs(category.tabs) do
         local tabX = currentX
-        local currentTabWidth
-        if i == numTabs then
-            currentTabWidth = (x + width) - currentX
-        else
-            currentTabWidth = tabWidth + (0.5 * scale)
-        end
-
+        local currentTabWidth = tabWidth
         local isSelected = (i == Menu.CurrentTab)
 
+        local bgR, bgG, bgB, bgA = 14, 19, 32, 235
         if isSelected then
-            local targetWidth = currentTabWidth
-            if i == numTabs then
-                targetWidth = math.min(currentTabWidth, (x + width) - tabX - (1 * scale))
-            end
-
-            if Menu.TabSelectorX == 0 then
-                Menu.TabSelectorX = tabX
-                Menu.TabSelectorWidth = targetWidth
-            end
-
-            local smoothSpeed = Menu.SmoothFactor
-            Menu.TabSelectorX = Menu.TabSelectorX + (tabX - Menu.TabSelectorX) * smoothSpeed
-            Menu.TabSelectorWidth = Menu.TabSelectorWidth + (targetWidth - Menu.TabSelectorWidth) * smoothSpeed
-
-            if math.abs(Menu.TabSelectorX - tabX) < (0.5 * scale) then Menu.TabSelectorX = tabX end
-            if math.abs(Menu.TabSelectorWidth - targetWidth) < (0.5 * scale) then Menu.TabSelectorWidth = targetWidth end
-
-            local drawX = Menu.TabSelectorX
-            local drawWidth = Menu.TabSelectorWidth
-
-            local baseR = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.r) and (Menu.Colors.SelectedBg.r / 255.0) or 1.0
-            local baseG = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.g) and (Menu.Colors.SelectedBg.g / 255.0) or 0.0
-            local baseB = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.b) and (Menu.Colors.SelectedBg.b / 255.0) or 1.0
-            local darkenAmount = 0.4
-
-            local gradientSteps = 20
-            local stepHeight = tabHeight / gradientSteps
-            local selectorWidth = drawWidth
-            local selectorX = drawX
-
-            for step = 0, gradientSteps - 1 do
-                local stepY = startY + (step * stepHeight)
-                local actualStepHeight = stepHeight
-                local maxY = startY + tabHeight
-                if stepY + actualStepHeight > maxY then
-                    actualStepHeight = maxY - stepY
-                end
-                if actualStepHeight > 0 and stepY < maxY then
-                    local stepGradientFactor = step / (gradientSteps - 1)
-                    local stepDarken = (1 - stepGradientFactor) * darkenAmount
-
-                    local stepR = math.max(0, baseR - stepDarken)
-                    local stepG = math.max(0, baseG - stepDarken)
-                    local stepB = math.max(0, baseB - stepDarken)
-
-                    if Susano and Susano.DrawRectFilled then
-                        Susano.DrawRectFilled(selectorX, stepY, selectorWidth, actualStepHeight, stepR, stepG, stepB, 0.9, 0.0)
-                    else
-                        Menu.DrawRect(selectorX, stepY, selectorWidth, actualStepHeight, stepR * 255, stepG * 255, stepB * 255, 220)
-                    end
-                end
-            end
-
-            Menu.DrawRect(selectorX, startY, (3 * scale), tabHeight, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
+            bgR, bgG, bgB, bgA = 199, 22, 30, 245
         end
 
-        Menu.DrawRect(tabX, startY, currentTabWidth, tabHeight, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, isSelected and 0 or 50)
+        if Susano and Susano.DrawRectFilled then
+            Susano.DrawRectFilled(tabX, containerY, currentTabWidth, containerH, bgR/255, bgG/255, bgB/255, bgA/255, 9 * scale)
+            if isSelected then
+                Susano.DrawRectFilled(tabX, containerY + containerH - (3 * scale), currentTabWidth, 3 * scale, 1.0, 0.33, 0.36, 1.0, 0)
+            end
+        else
+            Menu.DrawRoundedRect(tabX, containerY, currentTabWidth, containerH, bgR, bgG, bgB, bgA, 9 * scale)
+            if isSelected then
+                Menu.DrawRect(tabX, containerY + containerH - (3 * scale), currentTabWidth, 3 * scale, 255, 84, 92, 255)
+            end
+        end
 
-        local textSize = 17
+        local text = Menu.StripColorCodes and Menu.StripColorCodes(tab.name) or tostring(tab.name)
+        local textSize = 15
         local scaledTextSize = textSize * scale
-        local textY = startY + tabHeight / 2 - (scaledTextSize / 2) + (1 * scale)
         local textWidth = 0
         if Susano and Susano.GetTextWidth then
-            textWidth = Susano.GetTextWidth(tab.name, scaledTextSize)
+            textWidth = Susano.GetTextWidth(text, scaledTextSize)
         else
-            textWidth = string.len(tab.name) * 9 * scale
+            textWidth = string.len(text) * 8 * scale
         end
         local textX = tabX + (currentTabWidth / 2) - (textWidth / 2)
-        Menu.DrawText(textX, textY, tab.name, textSize, Menu.Colors.TextWhite.r / 255.0, Menu.Colors.TextWhite.g / 255.0, Menu.Colors.TextWhite.b / 255.0, 1.0)
+        local textY = containerY + (containerH / 2) - (scaledTextSize / 2) + (1 * scale)
 
-        currentX = currentX + tabWidth
+        local tr, tg, tb = 1.0, 1.0, 1.0
+        if not isSelected then
+            tr, tg, tb = 0.88, 0.90, 0.95
+        end
+        Menu.DrawText(textX, textY, text, textSize, tr, tg, tb, 1.0)
+
+        currentX = currentX + tabWidth + gap
     end
 end
 
