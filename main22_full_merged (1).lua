@@ -176,7 +176,7 @@ Menu.Position = {
     x = 50,
     y = 100,
     width = 404,
-    itemHeight = 38,
+    itemHeight = 42,
     mainMenuHeight = 34,
     headerHeight = 114,
     footerHeight = 30,
@@ -272,8 +272,9 @@ function Menu.DrawText(x, y, text, size_px, r, g, b, a)
     if b > 1.0 then b = b / 255.0 end
     if a > 1.0 then a = a / 255.0 end
 
+    local spacing = Menu.TextSpacing or 0.40
     if Susano and Susano.DrawText then
-        Susano.DrawText(x, y, text, size_px, r, g, b, a)
+        Susano.DrawText(x, y, text, size_px, r, g, b, a, spacing)
     end
 end
 
@@ -6317,6 +6318,9 @@ Menu.FontTuning = {
     itemMultiplier = 1.06,
     footerMultiplier = 1.02
 }
+Menu.TextSpacing = 0.40
+Menu.TextPadding = 12
+
 
 
 Menu.TabSelectorX = Menu.TabSelectorX or 0
@@ -6581,7 +6585,7 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
     Menu.DrawSouthIcon(iconX, iconY, iconSize, icon, isSelected)
 
     local txt = Menu.StripColorCodes(item.name)
-    local textX = iconX + iconSize + (10 * scale)
+    local textX = iconX + iconSize + ((Menu.TextPadding or 12) * scale)
     local textY = itemY + itemHeight/2 - (9 * scale)
     Menu.DrawText(textX, textY, txt, 16, 1.0, 1.0, 1.0, 1.0)
     Menu.DrawSimpleValue(item, rowX, itemY + 2, rowW, rowH)
@@ -6722,7 +6726,7 @@ function Menu.DrawCategories()
             Menu.DrawSouthIcon(iconX, iconY, iconSize, Menu.GetRowIcon(category.name, true), selected)
 
             local txt = Menu.StripColorCodes(category.name)
-            local textX = iconX + iconSize + (10 * scale)
+            local textX = iconX + iconSize + ((Menu.TextPadding or 12) * scale)
             local textY = yy + itemHeight/2 - (9 * scale)
             Menu.DrawText(textX, textY, txt, 16, 1.0, 1.0, 1.0, 1.0)
             Menu.DrawText(rowX + rowW - (24 * scale), textY, ">>", 17, st.dim.r/255, st.dim.g/255, st.dim.b/255, 1.0)
