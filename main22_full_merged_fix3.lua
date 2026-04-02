@@ -1394,29 +1394,32 @@ function Menu.DrawLoadingBar(alpha)
         soft = { r = 126, g = 136, b = 156 }
     }
 
+    local pulse = (math.sin((Menu.PremiumPulse or 0.0) * 1.2) + 1.0) * 0.5
+    local accent = palette.accent or { r = 148, g = 0, b = 211 }
+
+    -- hard full-screen dim overlay
     if Menu.DrawRoundedPanelModern then
-        Menu.DrawRoundedPanelModern(0, 0, screenWidth, screenHeight, { r = 0, g = 0, b = 0 }, 0.72 * alpha, 0)
+        Menu.DrawRoundedPanelModern(0, 0, screenWidth, screenHeight, { r = 0, g = 0, b = 0 }, 0.82 * alpha, 0)
+        Menu.DrawRoundedPanelModern(0, 0, screenWidth, screenHeight, accent, (0.03 + (pulse * 0.025)) * alpha, 0)
     else
-        Menu.DrawRect(0, 0, screenWidth, screenHeight, 0, 0, 0, math.floor(184 * alpha))
+        Menu.DrawRect(0, 0, screenWidth, screenHeight, 0, 0, 0, math.floor(210 * alpha))
     end
 
-    local pulse = (math.sin((Menu.PremiumPulse or 0.0) * 1.2) + 1.0) * 0.5
-
-    local cardWidth = 560
-    local cardHeight = 180
-    local x = (screenWidth / 2) - (cardWidth / 2)
-    local y = (screenHeight / 2) - (cardHeight / 2)
+    local cardWidth = math.floor(screenWidth * 0.42)
+    local cardHeight = math.floor(screenHeight * 0.22)
+    local x = math.floor((screenWidth - cardWidth) / 2)
+    local y = math.floor((screenHeight - cardHeight) / 2)
 
     if Menu.DrawSoftShadowModern then
-        Menu.DrawSoftShadowModern(x + 14, y + 18, cardWidth - 28, cardHeight - 18, 22)
+        Menu.DrawSoftShadowModern(x + 18, y + 22, cardWidth - 36, cardHeight - 18, 24)
     end
 
     if Menu.DrawRoundedPanelModern then
-        Menu.DrawRoundedPanelModern(x - 4, y - 4, cardWidth + 8, cardHeight + 8, palette.accent, (0.06 + (pulse * 0.05)) * alpha, 22)
-        Menu.DrawFramedPanelModern(x, y, cardWidth, cardHeight, palette.panel2, 0.985 * alpha, palette.accent, 0.42 * alpha, 20, 1)
-        Menu.DrawRoundedPanelModern(x + 1, y + 1, cardWidth - 2, math.max(46, cardHeight * 0.34), { r = 255, g = 255, b = 255 }, 0.03 * alpha, 19)
+        Menu.DrawRoundedPanelModern(x - 6, y - 6, cardWidth + 12, cardHeight + 12, accent, (0.07 + (pulse * 0.06)) * alpha, 24)
+        Menu.DrawFramedPanelModern(x, y, cardWidth, cardHeight, palette.panel2, 0.99 * alpha, accent, 0.55 * alpha, 22, 1)
+        Menu.DrawRoundedPanelModern(x + 1, y + 1, cardWidth - 2, math.max(56, math.floor(cardHeight * 0.36)), { r = 255, g = 255, b = 255 }, 0.03 * alpha, 21)
     else
-        Menu.DrawRoundedRect(x, y, cardWidth, cardHeight, palette.panel2.r, palette.panel2.g, palette.panel2.b, math.floor(250 * alpha), 20)
+        Menu.DrawRoundedRect(x, y, cardWidth, cardHeight, palette.panel2.r, palette.panel2.g, palette.panel2.b, math.floor(252 * alpha), 22)
     end
 
     local loadingTitle = "Injecting Modules"
@@ -1431,28 +1434,28 @@ function Menu.DrawLoadingBar(alpha)
         loadingSub = "Completing startup sequence"
     end
 
-    Menu.DrawText(x + 28, y + 24, loadingTitle, 28, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0 * alpha)
-    Menu.DrawText(x + 28, y + 58, loadingSub, 14, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98 * alpha)
+    Menu.DrawText(x + 34, y + 26, loadingTitle, 30, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0 * alpha)
+    Menu.DrawText(x + 34, y + 64, loadingSub, 15, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.98 * alpha)
 
-    local barX = x + 28
-    local barY = y + 104
-    local barW = cardWidth - 56
-    local barH = 16
+    local barX = x + 34
+    local barY = y + math.floor(cardHeight * 0.62)
+    local barW = cardWidth - 68
+    local barH = 18
     local progress = math.max(0.0, math.min(1.0, (Menu.LoadingProgress or 0.0) / 100.0))
 
     if Menu.DrawFramedPanelModern then
-        Menu.DrawFramedPanelModern(barX, barY, barW, barH, palette.panel3, 0.96 * alpha, palette.borderDim, 0.22 * alpha, 10, 1)
+        Menu.DrawFramedPanelModern(barX, barY, barW, barH, palette.panel3, 0.98 * alpha, palette.borderDim, 0.24 * alpha, 11, 1)
     else
-        Menu.DrawRoundedRect(barX, barY, barW, barH, palette.panel3.r, palette.panel3.g, palette.panel3.b, math.floor(245 * alpha), 10)
+        Menu.DrawRoundedRect(barX, barY, barW, barH, palette.panel3.r, palette.panel3.g, palette.panel3.b, math.floor(250 * alpha), 11)
     end
 
     if progress > 0 then
-        local fillW = math.max(18, barW * progress)
+        local fillW = math.max(20, math.floor(barW * progress))
         if Menu.DrawRoundedPanelModern then
-            Menu.DrawRoundedPanelModern(barX + 1, barY + 1, fillW - 2, barH - 2, palette.accent, 0.96 * alpha, 9)
-            Menu.DrawRoundedPanelModern(barX + 1, barY + 1, fillW - 2, math.max(5, (barH - 2) * 0.55), { r = 255, g = 255, b = 255 }, 0.045 * alpha, 8)
+            Menu.DrawRoundedPanelModern(barX + 1, barY + 1, fillW - 2, barH - 2, accent, 0.98 * alpha, 10)
+            Menu.DrawRoundedPanelModern(barX + 1, barY + 1, fillW - 2, math.max(6, math.floor((barH - 2) * 0.52)), { r = 255, g = 255, b = 255 }, 0.05 * alpha, 9)
         else
-            Menu.DrawRoundedRect(barX + 1, barY + 1, fillW - 2, barH - 2, palette.accent.r, palette.accent.g, palette.accent.b, math.floor(245 * alpha), 9)
+            Menu.DrawRoundedRect(barX + 1, barY + 1, fillW - 2, barH - 2, accent.r, accent.g, accent.b, math.floor(250 * alpha), 10)
         end
     end
 
@@ -1461,10 +1464,10 @@ function Menu.DrawLoadingBar(alpha)
     local statusText = "Modules ready: " .. tostring(modulesReady) .. "/10"
     local hintText = "Please wait"
 
-    local percentW = (Menu.GetTextWidthModern and Menu.GetTextWidthModern(percentText, 15)) or 30
-    Menu.DrawText(x + cardWidth - percentW - 28, y + 28, percentText, 15, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0 * alpha)
-    Menu.DrawText(x + 28, y + 134, statusText, 12, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.98 * alpha)
-    Menu.DrawText(x + 28, y + 152, hintText, 11, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.90 * alpha)
+    local percentW = (Menu.GetTextWidthModern and Menu.GetTextWidthModern(percentText, 17)) or 34
+    Menu.DrawText(x + cardWidth - percentW - 34, y + 30, percentText, 17, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0 * alpha)
+    Menu.DrawText(x + 34, barY + 30, statusText, 13, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.98 * alpha)
+    Menu.DrawText(x + 34, barY + 50, hintText, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.90 * alpha)
 end
 
 function Menu.DrawFooter()
