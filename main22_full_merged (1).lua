@@ -3900,113 +3900,14 @@ end
 
 function Menu.GetHeaderTitle()
     if Menu.Title and type(Menu.Title) == "string" and Menu.Title ~= "" then
-        
--- ===== REAL TROLL PACK =====
-function Menu.StuckInAir(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
-    local coords = GetEntityCoords(ped)
-    SetEntityCoords(ped, coords.x, coords.y, coords.z + 5.0, false,false,false,false)
-    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
-end
-
-function Menu.RealLagTroll(playerData)
-    if not playerData then return end
-    CreateThread(function()
-        for i = 1, 30 do
-            local target = GetPlayerFromServerId(playerData.id)
-            if target ~= -1 then
-                local ped = GetPlayerPed(target)
-                if ped and ped ~= 0 then
-                    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
-                    Wait(80)
-                    if FreezeEntityPosition then FreezeEntityPosition(ped, false) end
-                end
-            end
-            Wait(120)
-        end
-    end)
-end
-
-function Menu.BlindPlayer(playerData)
-    if not playerData then return end
-    CreateThread(function()
-        for i = 1, 15 do
-            local target = GetPlayerFromServerId(playerData.id)
-            if target ~= -1 then
-                local ped = GetPlayerPed(target)
-                if ped and ped ~= 0 then
-                    local c = GetEntityCoords(ped)
-                    if UseParticleFxAssetNextCall and StartNetworkedParticleFxNonLoopedAtCoord then
-                        UseParticleFxAssetNextCall("core")
-                        StartNetworkedParticleFxNonLoopedAtCoord("ent_sht_smoke",
-                            c.x, c.y, c.z + 1.0, 0.0,0.0,0.0, 5.0, false,false,false,false)
-                    end
-                end
-            end
-            Wait(200)
-        end
-    end)
-end
-
-function Menu.HornSpam(playerData)
-    if not playerData then return end
-    CreateThread(function()
-        for i = 1, 20 do
-            local target = GetPlayerFromServerId(playerData.id)
-            if target ~= -1 then
-                local ped = GetPlayerPed(target)
-                if ped and ped ~= 0 then
-                    local c = GetEntityCoords(ped)
-                    if PlaySoundFromCoord then
-                        PlaySoundFromCoord(-1, "Horn", c.x, c.y, c.z, "DLC_HEIST_HACKING_SNAKE_SOUNDS", false, 0, false)
-                    end
-                end
-            end
-            Wait(250)
-        end
-    end)
-end
-
-function Menu.CarSpinTrap(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
-    local coords = GetEntityCoords(ped)
-
-    local model = `adder`
-    if RequestModel and HasModelLoaded then
-        RequestModel(model)
-        local tries=0
-        while not HasModelLoaded(model) and tries<200 do tries=tries+1 Wait(0) end
-    end
-
-    local veh = CreateVehicle and CreateVehicle(model, coords.x, coords.y, coords.z, 0.0, true, true) or nil
-    if not veh or veh==0 then return end
-
-    if AttachEntityToEntity then
-        AttachEntityToEntity(veh, ped, 0, 0.0,0.0,0.0, 0.0,0.0,0.0, true,true,false,true,1,true)
-    end
-
-    for i = 1, 20 do
-        if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
-        Wait(100)
-    end
-end
-
-return Menu.Title
+        return Menu.Title
     end
 
     if Menu.TopLevelTabs and Menu.TopLevelTabs[Menu.CurrentTopTab] and Menu.TopLevelTabs[Menu.CurrentTopTab].name then
         return tostring(Menu.TopLevelTabs[Menu.CurrentTopTab].name)
     end
 
-    return "Menu"
+    return "Main"
 end
 
 function Menu.GetHeaderSubtitle()
@@ -5324,6 +5225,7 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
             cat.hasTabs = true
             cat.tabs = cat.tabs or {}
             local foundPlayers = false
+            local foundTroll = false
             for _, tab in ipairs(cat.tabs) do
                 if tab and tostring(tab.name or "") == "Players" then
                     foundPlayers = true
@@ -5331,6 +5233,12 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
                         { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                         { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                         { isSeparator = true, separatorText = "ONLINE PLAYERS" },
+                        { name = "Loading...", type = "action", onClick = function() end }
+                    }
+                elseif tab and tostring(tab.name or "") == "Troll" then
+                    foundTroll = true
+                    tab.items = tab.items or {
+                        { isSeparator = true, separatorText = "TROLL PLAYERS" },
                         { name = "Loading...", type = "action", onClick = function() end }
                     }
                 end
@@ -5342,6 +5250,15 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
                         { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                         { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                         { isSeparator = true, separatorText = "ONLINE PLAYERS" },
+                        { name = "Loading...", type = "action", onClick = function() end }
+                    }
+                })
+            end
+            if not foundTroll then
+                table.insert(cat.tabs, {
+                    name = "Troll",
+                    items = {
+                        { isSeparator = true, separatorText = "TROLL PLAYERS" },
                         { name = "Loading...", type = "action", onClick = function() end }
                     }
                 })
@@ -5762,261 +5679,292 @@ function Menu.RefreshOnlinePlayers()
     Menu.PlayerList.players = result
     Menu.ApplyPlayerSearch()
 
+    local shownPlayers = Menu.PlayerList.filteredPlayers or {}
     local selectedPlayer = Menu.PlayerList.selectedPlayer
-    if selectedPlayer then
-        if Menu.PlayerList.submenu == "particleeffects" then
-            items = Menu.BuildParticleLoopItems(selectedPlayer)
-        else
-            local coordText = "Coords: N/A"
-            local ped = Menu.GetPlayerPedSafe and Menu.GetPlayerPedSafe(selectedPlayer.clientId) or nil
-            if ped and GetEntityCoords then
-                local coords = GetEntityCoords(ped)
-                if coords then
-                    local cx = coords.x or coords[1] or 0.0
-                    local cy = coords.y or coords[2] or 0.0
-                    local cz = coords.z or coords[3] or 0.0
-                    coordText = string.format("Coords: %.2f, %.2f, %.2f", cx, cy, cz)
-                end
+    local submenu = Menu.PlayerList.submenu
+
+    local playersItems = {
+        {
+            name = "Search Players",
+            type = "action",
+            onClick = function()
+                Menu.OpenPlayerSearch()
             end
+        },
+        {
+            name = "Clear Search",
+            type = "action",
+            onClick = function()
+                Menu.PlayerList.searchQuery = ""
+                Menu.ApplyPlayerSearch()
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        {
+            isSeparator = true,
+            separatorText = (#tostring(Menu.PlayerList.searchQuery or "") > 0) and ("RESULTS: " .. tostring(Menu.PlayerList.searchQuery)) or "ONLINE PLAYERS"
+        }
+    }
 
-            items = {
-                {
-                    name = "Back To Player List",
-                    type = "action",
-                    onClick = function()
-                        Menu.ClosePlayerInfo()
-                    end
-                },
-                {
-                    name = "Refresh Selected Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.RefreshOnlinePlayers()
-                    end
-                },
-                {
-                    isSeparator = true,
-                    separatorText = "[" .. tostring(selectedPlayer.id or "?") .. "] " .. tostring(selectedPlayer.name or "Unknown")
-                },
-                { name = "Name: " .. tostring(selectedPlayer.name or "Unknown"), type = "action", onClick = function() end },
-                { name = "Server ID: " .. tostring(selectedPlayer.id or "N/A"), type = "action", onClick = function() end },
-                { name = "Client ID: " .. tostring(selectedPlayer.clientId or "N/A"), type = "action", onClick = function() end },
-                { name = coordText, type = "action", onClick = function() end },
-                {
-                    name = "Teleport To Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.TeleportToPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Troll Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.TrollPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Gun NPC Attack",
-                    type = "action",
-                    onClick = function()
-                        Menu.GunNPCAttackPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Ramp All Vehicles",
-                    type = "action",
-                    onClick = function()
-                        Menu.RampAllVehicles()
-                    end
-                },
-                {
-                    name = "FIB Building All Vehicles",
-                    type = "action",
-                    onClick = function()
-                        Menu.FIBAllVehicles()
-                    end
-                },
-                {
-                    name = "Magnet Cars",
-                    type = "action",
-                    onClick = function()
-                        Menu.MagnetCars()
-                    end
-                },
-                {
-                    name = "Flip All Vehicles",
-                    type = "action",
-                    onClick = function()
-                        Menu.FlipAllVehicles()
-                    end
-                },
-                {
-                    name = "Spin Cars Tornado",
-                    type = "action",
-                    onClick = function()
-                        Menu.SpinCarsTornado()
-                    end
-                },
-                {
-                    name = "Particle Effects On Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.PlayerList.submenu = "particleeffects"
-                        Menu.RefreshOnlinePlayers()
-                    end
-                },
-                {
-                    name = Menu.IsPiggybacking and "Stop Piggyback" or "Piggyback On Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.TogglePiggybackOnPlayer(selectedPlayer)
-                        Menu.RefreshOnlinePlayers()
-                    end
-                },
-                {
-                    name = "HEX Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.HEXPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Launch Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.LaunchPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Clone NPC Attack"
-                },
-                {
-                    name = "Infinite Jump Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.InfiniteJumpBug(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Clone NPC Attack",
-                    type = "action",
-                    onClick = function()
-                        Menu.CloneNPCAttackPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Freeze Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.FreezePlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Vehicle Rain On Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.VehicleRainOnPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Cage Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.CagePlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Stuck In Air",
-                    type = "action",
-                    onClick = function()
-                        Menu.StuckInAir(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Fake Lag",
-                    type = "action",
-                    onClick = function()
-                        Menu.RealLagTroll(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Blind Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.BlindPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Horn Spam",
-                    type = "action",
-                    onClick = function()
-                        Menu.HornSpam(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Car Spin Trap",
-                    type = "action",
-                    onClick = function()
-                        Menu.CarSpinTrap(selectedPlayer)
-                    end
-                },
-                {
-                    name = Menu.HexAllIncludeSelf and "HEX All Players (Skip Self)" or "HEX All Players",
-                    type = "action",
-                    onClick = function()
-                        Menu.HEXAllPlayers()
-                    end
-                },
-                {
-                    name = "Toggle HEX Include Self",
-                    type = "toggle",
-                    value = Menu.HexAllIncludeSelf,
-                    onClick = function(value)
-                        Menu.HexAllIncludeSelf = value == true
-                        Menu.RefreshOnlinePlayers()
-                    end
-                }
-            }
+    for _, p in ipairs(shownPlayers) do
+        table.insert(playersItems, {
+            name = "[" .. tostring(p.id) .. "] " .. tostring(p.name),
+            type = "action",
+            onClick = function()
+                Menu.OpenPlayerInfo(p)
+            end
+        })
+    end
+
+    if #shownPlayers == 0 then
+        table.insert(playersItems, {
+            name = "No players found",
+            type = "action",
+            onClick = function() end
+        })
+    end
+
+    local trollItems = nil
+
+    if selectedPlayer and submenu == "particleeffects" then
+        trollItems = Menu.BuildParticleLoopItems(selectedPlayer)
+    elseif selectedPlayer and submenu == "troll_actions" then
+        local coordText = "Coords: N/A"
+        local ped = Menu.GetPlayerPedSafe and Menu.GetPlayerPedSafe(selectedPlayer.clientId) or nil
+        if ped and GetEntityCoords then
+            local coords = GetEntityCoords(ped)
+            if coords then
+                local cx = coords.x or coords[1] or 0.0
+                local cy = coords.y or coords[2] or 0.0
+                local cz = coords.z or coords[3] or 0.0
+                coordText = string.format("Coords: %.2f, %.2f, %.2f", cx, cy, cz)
+            end
         end
-    else
-        local shownPlayers = Menu.PlayerList.filteredPlayers or {}
 
-        items = {
+        trollItems = {
             {
-                name = "Search Players",
+                name = "Back To Troll Player List",
                 type = "action",
                 onClick = function()
-                    Menu.OpenPlayerSearch()
+                    Menu.PlayerList.selectedPlayer = nil
+                    Menu.PlayerList.submenu = nil
+                    Menu.RefreshOnlinePlayers()
                 end
             },
             {
-                name = "Clear Search",
+                name = "Refresh Selected Player",
                 type = "action",
                 onClick = function()
-                    Menu.PlayerList.searchQuery = ""
-                    Menu.ApplyPlayerSearch()
                     Menu.RefreshOnlinePlayers()
                 end
             },
             {
                 isSeparator = true,
-                separatorText = (#tostring(Menu.PlayerList.searchQuery or "") > 0) and ("RESULTS: " .. tostring(Menu.PlayerList.searchQuery)) or "ONLINE PLAYERS"
+                separatorText = "[" .. tostring(selectedPlayer.id or "?") .. "] " .. tostring(selectedPlayer.name or "Unknown")
+            },
+            {
+                name = "Troll Player",
+                type = "action",
+                onClick = function()
+                    Menu.TrollPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Gun NPC Attack",
+                type = "action",
+                onClick = function()
+                    Menu.GunNPCAttackPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Particle Effects On Player",
+                type = "action",
+                onClick = function()
+                    Menu.PlayerList.submenu = "particleeffects"
+                    Menu.RefreshOnlinePlayers()
+                end
+            },
+            {
+                name = "HEX Player",
+                type = "action",
+                onClick = function()
+                    Menu.HEXPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Launch Player",
+                type = "action",
+                onClick = function()
+                    Menu.LaunchPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Infinite Jump Bug",
+                type = "action",
+                onClick = function()
+                    Menu.InfiniteJumpBug(selectedPlayer)
+                end
+            },
+            {
+                name = "Clone NPC Attack",
+                type = "action",
+                onClick = function()
+                    Menu.CloneNPCAttackPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Freeze Player",
+                type = "action",
+                onClick = function()
+                    Menu.FreezePlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Vehicle Rain On Player",
+                type = "action",
+                onClick = function()
+                    Menu.VehicleRainOnPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Cage Player",
+                type = "action",
+                onClick = function()
+                    Menu.CagePlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Stuck In Air",
+                type = "action",
+                onClick = function()
+                    Menu.StuckInAir(selectedPlayer)
+                end
+            },
+            {
+                name = "Fake Lag",
+                type = "action",
+                onClick = function()
+                    Menu.RealLagTroll(selectedPlayer)
+                end
+            },
+            {
+                name = "Blind Player",
+                type = "action",
+                onClick = function()
+                    Menu.BlindPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Horn Spam",
+                type = "action",
+                onClick = function()
+                    Menu.HornSpam(selectedPlayer)
+                end
+            },
+            {
+                name = "Car Spin Trap",
+                type = "action",
+                onClick = function()
+                    Menu.CarSpinTrap(selectedPlayer)
+                end
+            },
+            {
+                name = "Ramp All Vehicles",
+                type = "action",
+                onClick = function()
+                    Menu.RampAllVehicles()
+                end
+            },
+            {
+                name = "FIB Building All Vehicles",
+                type = "action",
+                onClick = function()
+                    Menu.FIBAllVehicles()
+                end
+            },
+            {
+                name = "Magnet Cars",
+                type = "action",
+                onClick = function()
+                    Menu.MagnetCars()
+                end
+            },
+            {
+                name = "Flip All Vehicles",
+                type = "action",
+                onClick = function()
+                    Menu.FlipAllVehicles()
+                end
+            },
+            {
+                name = "Spin Cars Tornado",
+                type = "action",
+                onClick = function()
+                    Menu.SpinCarsTornado()
+                end
+            },
+            {
+                name = Menu.IsPiggybacking and "Stop Piggyback" or "Piggyback On Player",
+                type = "action",
+                onClick = function()
+                    Menu.TogglePiggybackOnPlayer(selectedPlayer)
+                    Menu.RefreshOnlinePlayers()
+                end
+            },
+            {
+                name = Menu.HexAllIncludeSelf and "HEX All Players (Skip Self)" or "HEX All Players",
+                type = "action",
+                onClick = function()
+                    Menu.HEXAllPlayers()
+                end
+            },
+            {
+                name = "Toggle HEX Include Self",
+                type = "toggle",
+                value = Menu.HexAllIncludeSelf,
+                onClick = function(value)
+                    Menu.HexAllIncludeSelf = value == true
+                    Menu.RefreshOnlinePlayers()
+                end
+            },
+            {
+                isSeparator = true,
+                separatorText = "PLAYER DETAILS"
+            },
+            {
+                name = "Teleport To Player",
+                type = "action",
+                onClick = function()
+                    Menu.TeleportToPlayer(selectedPlayer)
+                end
+            },
+            { name = "Name: " .. tostring(selectedPlayer.name or "Unknown"), type = "action", onClick = function() end },
+            { name = "Server ID: " .. tostring(selectedPlayer.id or "N/A"), type = "action", onClick = function() end },
+            { name = "Client ID: " .. tostring(selectedPlayer.clientId or "N/A"), type = "action", onClick = function() end },
+            { name = coordText, type = "action", onClick = function() end }
+        }
+    else
+        trollItems = {
+            {
+                isSeparator = true,
+                separatorText = (#tostring(Menu.PlayerList.searchQuery or "") > 0) and ("TROLL: " .. tostring(Menu.PlayerList.searchQuery)) or "SELECT PLAYER TO TROLL"
             }
         }
 
         for _, p in ipairs(shownPlayers) do
-            table.insert(items, {
+            table.insert(trollItems, {
                 name = "[" .. tostring(p.id) .. "] " .. tostring(p.name),
                 type = "action",
                 onClick = function()
-                    Menu.OpenPlayerInfo(p)
+                    Menu.PlayerList.selectedPlayer = p
+                    Menu.PlayerList.submenu = "troll_actions"
+                    Menu.RefreshOnlinePlayers()
                 end
             })
         end
 
         if #shownPlayers == 0 then
-            table.insert(items, {
+            table.insert(trollItems, {
                 name = "No players found",
                 type = "action",
                 onClick = function() end
@@ -6030,7 +5978,9 @@ function Menu.RefreshOnlinePlayers()
             if cat and tostring(cat.name or "") == "Online" and cat.tabs then
                 for _, tab in ipairs(cat.tabs) do
                     if tab and tostring(tab.name or "") == "Players" then
-                        tab.items = items
+                        tab.items = playersItems
+                    elseif tab and tostring(tab.name or "") == "Troll" then
+                        tab.items = trollItems
                     end
                 end
             end
@@ -6206,6 +6156,262 @@ function Menu.CarSpinTrap(playerData)
         if SetEntityRotation then SetEntityRotation(veh, 0.0, 0.0, i * 40.0, 2, true) end
         Wait(100)
     end
+end
+
+
+-- ===== SOUTH STYLE SIMPLE LUA UI OVERRIDES =====
+Menu.DiscordInvite = Menu.DiscordInvite or "discord.gg/zP8MaFP9uM"
+Menu.BrandName = Menu.BrandName or "SouthyV2"
+
+function Menu.GetSouthIcon(itemName)
+    local n = string.lower(tostring(itemName or ""))
+    if n:find("self") then return "◎" end
+    if n:find("online") or n:find("player") then return "◉" end
+    if n:find("vehicle") then return "▣" end
+    if n:find("visual") or n:find("esp") then return "◌" end
+    if n:find("weapon") then return "▶" end
+    if n:find("misc") then return "◆" end
+    if n:find("exploit") or n:find("troll") then return "✦" end
+    if n:find("setting") then return "✹" end
+    return "•"
+end
+
+function Menu.GetSouthLayout()
+    local scaledPos = Menu.GetScaledPosition()
+    local scale = Menu.Scale or 1.0
+    local x = scaledPos.x
+    local y = scaledPos.y
+    local width = scaledPos.width - 1
+    local bannerHeight = Menu.Banner.enabled and (Menu.Banner.height * scale) or (110 * scale)
+    local barHeight = 34 * scale
+    local rowHeight = scaledPos.itemHeight
+    local gap = 8 * scale
+    local footerGap = 8 * scale
+    local footerHeight = 28 * scale
+    local visibleRows = 0
+
+    if Menu.OpenedCategory then
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory] or nil
+        if category and category.tabs and category.tabs[Menu.CurrentTab] and category.tabs[Menu.CurrentTab].items then
+            visibleRows = math.min(Menu.ItemsPerPage, #category.tabs[Menu.CurrentTab].items)
+        end
+    else
+        local totalCategories = math.max(0, (Menu.Categories and #Menu.Categories or 0) - 1)
+        visibleRows = math.min(Menu.ItemsPerPage, totalCategories)
+    end
+
+    local itemsY = y + bannerHeight + barHeight
+    local itemsHeight = visibleRows * rowHeight
+    local footerY = itemsY + itemsHeight
+    local totalHeight = (footerY + footerGap + footerHeight) - y
+
+    return {
+        x = x,
+        y = y,
+        width = width,
+        bannerHeight = bannerHeight,
+        barY = y + bannerHeight,
+        barHeight = barHeight,
+        itemsY = itemsY,
+        rowHeight = rowHeight,
+        itemsHeight = itemsHeight,
+        footerY = footerY + footerGap,
+        footerHeight = footerHeight,
+        totalHeight = totalHeight,
+        radius = 10 * scale,
+        innerRadius = 7 * scale,
+        scale = scale
+    }
+end
+
+function Menu.DrawSouthChevron(x, y, scale, color, alpha)
+    local s = 14 * scale
+    Menu.DrawText(x, y, "»", s, (color.r or 255) / 255.0, (color.g or 255) / 255.0, (color.b or 255) / 255.0, alpha or 1.0)
+end
+
+function Menu.DrawBackground()
+    local p = Menu.GetThemePalette()
+    local l = Menu.GetSouthLayout()
+
+    Menu.DrawSoftShadow(l.x + 2, l.y + 10, l.width - 4, l.totalHeight - 6, l.radius, 0.32, 18)
+    Menu.DrawRoundedPanel(l.x, l.barY, l.width, l.totalHeight - l.bannerHeight, { r = 0, g = 0, b = 0 }, 0.92, l.radius)
+    Menu.DrawFramedPanel(l.x, l.barY, l.width, l.totalHeight - l.bannerHeight, { r = 8, g = 8, b = 8 }, 0.92, { r = 70, g = 12, b = 12 }, 0.18, l.radius, 1)
+
+    if Menu.ShowSnowflakes then
+        for _, particle in ipairs(Menu.Particles or {}) do
+            particle.y = particle.y + particle.speedY
+            particle.x = particle.x + particle.speedX
+            if particle.y > 1.0 then
+                particle.y = 0.0
+                particle.x = math.random(0, 100) / 100
+            end
+            local px = l.x + (particle.x * l.width)
+            local py = l.barY + (particle.y * (l.totalHeight - l.bannerHeight))
+            if px >= l.x and px <= (l.x + l.width) and py >= l.barY and py <= (l.y + l.totalHeight) then
+                Menu.DrawRoundedPanel(px, py, particle.size, particle.size, p.white, 0.38, particle.size)
+            end
+        end
+    end
+end
+
+function Menu.DrawHeader()
+    local p = Menu.GetThemePalette()
+    local l = Menu.GetSouthLayout()
+    local scale = l.scale
+
+    if Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+        Susano.DrawImage(Menu.bannerTexture, l.x, l.y, l.width, l.bannerHeight, 1, 1, 1, 1, 0)
+    else
+        Menu.DrawRoundedPanel(l.x, l.y, l.width, l.bannerHeight, { r = 6, g = 6, b = 6 }, 1.0, l.radius)
+        local steps = 40
+        for i = 0, steps - 1 do
+            local yy = l.y + (i * (l.bannerHeight / steps))
+            local h = math.ceil(l.bannerHeight / steps)
+            local f = i / math.max(1, steps - 1)
+            local rr = 35 + math.floor((1.0 - f) * 80)
+            local gg = 5 + math.floor((1.0 - f) * 8)
+            local bb = 5 + math.floor((1.0 - f) * 8)
+            Menu.DrawRect(l.x, yy, l.width, h, rr, gg, bb, 255)
+        end
+        Menu.DrawRoundedPanel(l.x + (12 * scale), l.y + (14 * scale), l.width - (24 * scale), 2 * scale, { r = 255, g = 40, b = 40 }, 0.65, 1)
+        Menu.DrawRoundedPanel(l.x + (18 * scale), l.y + (26 * scale), l.width - (36 * scale), 2 * scale, { r = 255, g = 30, b = 30 }, 0.42, 1)
+        Menu.DrawRoundedPanel(l.x + (26 * scale), l.y + (38 * scale), l.width - (52 * scale), 2 * scale, { r = 255, g = 24, b = 24 }, 0.24, 1)
+    end
+
+    Menu.DrawRoundedPanel(l.x, l.barY, l.width, l.barHeight, { r = 18, g = 18, b = 18 }, 0.96, 0)
+    Menu.DrawRoundedPanel(l.x, l.barY - (2 * scale), l.width, 2 * scale, { r = 200, g = 20, b = 20 }, 1.0, 0)
+
+    local title = Menu.GetHeaderTitle()
+    local titleSize = 21
+    local titleW = Menu.GetTextWidth(title, titleSize)
+    Menu.DrawText(l.x + (l.width / 2) - (titleW / 2), l.barY + (l.barHeight / 2) - (9 * scale), title, titleSize, p.text.r / 255.0, p.text.g / 255.0, p.text.b / 255.0, 1.0)
+end
+
+function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local p = Menu.GetThemePalette()
+    local scale = Menu.Scale or 1.0
+
+    if item.isSeparator then
+        Menu.DrawRoundedPanel(x, itemY, width, itemHeight, { r = 10, g = 10, b = 10 }, 0.85, 0)
+        local label = tostring(item.separatorText or "SECTION")
+        local w = Menu.GetTextWidth(label, 12)
+        Menu.DrawText(x + (width / 2) - (w / 2), itemY + (itemHeight / 2) - (6 * scale), label, 12, p.muted.r / 255.0, p.muted.g / 255.0, p.muted.b / 255.0, 0.9)
+        return
+    end
+
+    Menu.DrawRoundedPanel(x, itemY, width, itemHeight, { r = 4, g = 4, b = 4 }, 0.96, 0)
+
+    if isSelected then
+        Menu.DrawRoundedPanel(x, itemY, width, itemHeight, { r = 210, g = 16, b = 16 }, 0.96, 0)
+        Menu.DrawRoundedPanel(x, itemY, 3 * scale, itemHeight, { r = 255, g = 255, b = 255 }, 0.96, 0)
+    end
+
+    local iconText = Menu.GetSouthIcon(item.name)
+    local iconX = x + (14 * scale)
+    local textY = itemY + (itemHeight / 2) - (8 * scale)
+    local textColor = isSelected and p.white or { r = 236, g = 236, b = 236 }
+    local subColor = isSelected and p.white or p.muted
+
+    Menu.DrawText(iconX, textY, iconText, 17, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 1.0)
+    Menu.DrawText(iconX + (22 * scale), textY, item.name or "Option", 17, textColor.r / 255.0, textColor.g / 255.0, textColor.b / 255.0, 1.0)
+
+    if item.type == "toggle" or item.type == "toggle_selector" then
+        local toggleText = item.value and "ON" or "OFF"
+        local tw = Menu.GetTextWidth(toggleText, 12)
+        Menu.DrawText(x + width - (42 * scale) - tw, itemY + (itemHeight / 2) - (6 * scale), toggleText, 12, subColor.r / 255.0, subColor.g / 255.0, subColor.b / 255.0, 0.95)
+    elseif item.type == "selector" and item.options then
+        local selectedIndex = item.selected or 1
+        local selectedOption = tostring(item.options[selectedIndex] or "")
+        local maxW = math.min(90 * scale, Menu.GetTextWidth(selectedOption, 13))
+        Menu.DrawText(x + width - (44 * scale) - maxW, itemY + (itemHeight / 2) - (6 * scale), selectedOption, 13, subColor.r / 255.0, subColor.g / 255.0, subColor.b / 255.0, 0.95)
+    elseif item.type == "slider" then
+        local val = item.value or item.min or 0
+        local txt = string.format("%.0f", val)
+        local tw = Menu.GetTextWidth(txt, 12)
+        Menu.DrawText(x + width - (44 * scale) - tw, itemY + (itemHeight / 2) - (6 * scale), txt, 12, subColor.r / 255.0, subColor.g / 255.0, subColor.b / 255.0, 0.95)
+    end
+
+    Menu.DrawSouthChevron(x + width - (24 * scale), itemY + (itemHeight / 2) - (8 * scale), scale, subColor, 0.95)
+end
+
+function Menu.DrawCategories()
+    local p = Menu.GetThemePalette()
+    local l = Menu.GetSouthLayout()
+    local x = l.x
+    local width = l.width
+    local itemHeight = l.rowHeight
+    local itemsY = l.itemsY
+
+    if Menu.OpenedCategory then
+        local category = Menu.Categories[Menu.OpenedCategory]
+        if not category or not category.hasTabs or not category.tabs then
+            Menu.OpenedCategory = nil
+            return
+        end
+
+        local currentTab = category.tabs[Menu.CurrentTab]
+        if not currentTab or not currentTab.items then return end
+
+        local totalItems = #currentTab.items
+        local maxVisible = Menu.ItemsPerPage
+        if Menu.CurrentItem > Menu.ItemScrollOffset + maxVisible then
+            Menu.ItemScrollOffset = Menu.CurrentItem - maxVisible
+        elseif Menu.CurrentItem <= Menu.ItemScrollOffset then
+            Menu.ItemScrollOffset = math.max(0, Menu.CurrentItem - 1)
+        end
+
+        for displayIndex = 1, math.min(maxVisible, totalItems) do
+            local itemIndex = displayIndex + Menu.ItemScrollOffset
+            if itemIndex <= totalItems then
+                local itemY = itemsY + ((displayIndex - 1) * itemHeight)
+                Menu.DrawItem(x, itemY, width, itemHeight, currentTab.items[itemIndex], itemIndex == Menu.CurrentItem)
+            end
+        end
+
+        if totalItems > maxVisible then
+            Menu.DrawScrollbar(x, itemsY, math.min(maxVisible, totalItems) * itemHeight, Menu.CurrentItem, totalItems, false, width)
+        end
+        return
+    end
+
+    local totalCategories = math.max(0, (#(Menu.Categories or {}) - 1))
+    local maxVisible = Menu.ItemsPerPage
+
+    if Menu.CurrentCategory > Menu.CategoryScrollOffset + maxVisible + 1 then
+        Menu.CategoryScrollOffset = Menu.CurrentCategory - maxVisible - 1
+    elseif Menu.CurrentCategory <= Menu.CategoryScrollOffset + 1 then
+        Menu.CategoryScrollOffset = math.max(0, Menu.CurrentCategory - 2)
+    end
+
+    for displayIndex = 1, math.min(maxVisible, totalCategories) do
+        local categoryIndex = displayIndex + Menu.CategoryScrollOffset + 1
+        if categoryIndex <= #Menu.Categories then
+            local itemY = itemsY + ((displayIndex - 1) * itemHeight)
+            local item = Menu.Categories[categoryIndex]
+            Menu.DrawItem(x, itemY, width, itemHeight, { name = item.name, type = "action" }, categoryIndex == Menu.CurrentCategory)
+        end
+    end
+
+    if totalCategories > maxVisible then
+        Menu.DrawScrollbar(x, itemsY, math.min(maxVisible, totalCategories) * itemHeight, Menu.CurrentCategory - 1, totalCategories, true, width)
+    end
+end
+
+function Menu.DrawFooter()
+    local p = Menu.GetThemePalette()
+    local l = Menu.GetSouthLayout()
+    local scale = l.scale
+    local footerY = l.footerY
+
+    Menu.DrawRoundedPanel(l.x, footerY, l.width, l.footerHeight, { r = 22, g = 22, b = 22 }, 0.96, 0)
+    Menu.DrawRoundedPanel(l.x, footerY, 22 * scale, l.footerHeight, { r = 200, g = 18, b = 18 }, 0.92, 0)
+
+    local leftText = tostring(Menu.DiscordInvite or "discord.gg/yourmenu")
+    local rightText = tostring(Menu.BrandName or "SouthyV2")
+    Menu.DrawText(l.x + (28 * scale), footerY + (l.footerHeight / 2) - (7 * scale), leftText, 13, p.text.r / 255.0, p.text.g / 255.0, p.text.b / 255.0, 0.98)
+
+    local rightW = Menu.GetTextWidth(rightText, 13)
+    Menu.DrawText(l.x + l.width - rightW - (12 * scale), footerY + (l.footerHeight / 2) - (7 * scale), rightText, 13, p.text.r / 255.0, p.text.g / 255.0, p.text.b / 255.0, 0.98)
 end
 
 return Menu
