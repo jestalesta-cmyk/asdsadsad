@@ -173,8 +173,8 @@ function Menu.ApplyTheme(themeName)
 end
 
 Menu.Position = {
-    x = 24,
-    y = 100,
+    x = 19,
+    y = 119,
     width = 404,
     itemHeight = 38,
     mainMenuHeight = 34,
@@ -188,16 +188,13 @@ Menu.Position = {
     scrollbarPadding = 3,
     headerRadius = 14
 }
+-- default left-side injected layout
 Menu.Scale = 1.0
-Menu.TargetX = 24
-Menu.HiddenX = -420
-Menu.AnimatedX = Menu.TargetX
-Menu.SlideSpeed = 0.18
 
 function Menu.GetScaledPosition()
     local scale = Menu.Scale or 1.0
     return {
-        x = Menu.AnimatedX or Menu.Position.x,
+        x = Menu.Position.x,
         y = Menu.Position.y,
         width = Menu.Position.width * scale,
         itemHeight = Menu.Position.itemHeight * scale,
@@ -2058,18 +2055,6 @@ function Menu.Render()
         dt = GetFrameTime()
     end
     local animSpeed = 5.0 * dt
-
-    do
-        local targetX = Menu.Visible and (Menu.TargetX or Menu.Position.x) or (Menu.HiddenX or -((Menu.Position.width or 404) + 40))
-        if Menu.AnimatedX == nil then
-            Menu.AnimatedX = targetX
-        end
-        local slide = Menu.SlideSpeed or 0.18
-        Menu.AnimatedX = Menu.AnimatedX + (targetX - Menu.AnimatedX) * slide
-        if math.abs(Menu.AnimatedX - targetX) < 0.5 then
-            Menu.AnimatedX = targetX
-        end
-    end
 
     if Menu.IsLoading then
         Menu.LoadingBarAlpha = math.min(1.0, Menu.LoadingBarAlpha + animSpeed)
