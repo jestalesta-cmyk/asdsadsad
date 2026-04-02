@@ -1,12 +1,4 @@
 local Menu = {}
-
-Menu.ServerPlayerCount = 0
-
-RegisterNetEvent("menu:updatePlayerCount")
-AddEventHandler("menu:updatePlayerCount", function(count)
-    Menu.ServerPlayerCount = count or 0
-end)
-
 Menu.Visible = true
 Menu.CurrentCategory = 2
 Menu.CurrentPage = 1
@@ -260,13 +252,13 @@ function Menu.DrawText(x, y, text, size_px, r, g, b, a)
     size_px = math.floor(size_px + 0.5)
 
     if original >= 19 then
-        if size_px < 20 then size_px = 20 end
+        if size_px < 22 then size_px = 22 end
     elseif original >= 15 then
-        if size_px < 17 then size_px = 17 end
+        if size_px < 19 then size_px = 19 end
     elseif original >= 13 then
-        if size_px < 14 then size_px = 14 end
+        if size_px < 16 then size_px = 16 end
     else
-        if size_px < 13 then size_px = 13 end
+        if size_px < 14 then size_px = 14 end
     end
 
     text = Menu.StripColorCodes and Menu.StripColorCodes(text) or tostring(text or "")
@@ -5444,7 +5436,7 @@ function Menu.GetServerEndpoint()
 end
 
 function Menu.BuildServerInfoItems()
-    local players = Menu.ServerPlayerCount or Menu.GetServerPlayerCount()
+    local players = Menu.GetServerPlayerCount()
     local endpoint = Menu.GetServerEndpoint()
     local resources = Menu.GetServerResourceCount()
 
@@ -6458,11 +6450,11 @@ Menu.UIEffects = {
 
 Menu.FontTuning = {
     enabled = true,
-    sizeMultiplier = 1.05,
-    headerMultiplier = 1.10,
-    tabMultiplier = 1.06,
-    itemMultiplier = 1.06,
-    footerMultiplier = 1.02
+    sizeMultiplier = 1.12,
+    headerMultiplier = 1.18,
+    tabMultiplier = 1.14,
+    itemMultiplier = 1.15,
+    footerMultiplier = 1.08
 }
 Menu.TextSpacing = 0.40
 Menu.TextPadding = 12
