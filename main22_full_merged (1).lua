@@ -189,11 +189,20 @@ Menu.Position = {
     headerRadius = 14
 }
 Menu.Scale = 1.0
+Menu.TargetX = nil
+Menu.AnimatedX = nil
+Menu.OpenCloseLerp = 0.18
+Menu.SideOpen = true
+
 
 function Menu.GetScaledPosition()
     local scale = Menu.Scale or 1.0
+    local drawX = Menu.Position.x
+    if Menu.AnimatedX ~= nil then
+        drawX = Menu.AnimatedX
+    end
     return {
-        x = Menu.Position.x,
+        x = drawX,
         y = Menu.Position.y,
         width = Menu.Position.width * scale,
         itemHeight = Menu.Position.itemHeight * scale,
@@ -2040,6 +2049,33 @@ function Menu.DrawBackground()
 end
 
 
+
+function Menu.UpdatePanelAnimation()
+    local screenWidth = 1920
+    if Susano and Susano.GetScreenWidth then
+        screenWidth = Susano.GetScreenWidth()
+    end
+
+    local panelWidth = (Menu.Position.width or 404) * (Menu.Scale or 1.0)
+    local targetX = Menu.Position.x or 50
+    local hiddenX = -panelWidth - 40
+
+    if Menu.TargetX == nil then
+        Menu.TargetX = targetX
+    end
+    if Menu.AnimatedX == nil then
+        Menu.AnimatedX = Menu.Visible and targetX or hiddenX
+    end
+
+    local goal = Menu.Visible and targetX or hiddenX
+    local speed = Menu.OpenCloseLerp or 0.18
+    Menu.AnimatedX = Menu.AnimatedX + ((goal - Menu.AnimatedX) * speed)
+
+    if math.abs(Menu.AnimatedX - goal) < 0.5 then
+        Menu.AnimatedX = goal
+    end
+end
+
 function Menu.Render()
     if Menu.TopLevelTabs and not Menu.Categories then
         Menu.UpdateCategoriesFromTopTab()
@@ -2079,7 +2115,11 @@ function Menu.Render()
         Menu.DrawKeybindsInterface(Menu.KeybindsInterfaceAlpha)
     end
 
-    if Menu.Visible then
+    Menu.UpdatePanelAnimation()
+
+    local shouldDrawPanel = Menu.Visible or (Menu.AnimatedX ~= nil and Menu.AnimatedX > -((Menu.Position.width or 404) * (Menu.Scale or 1.0)) - 35)
+
+    if shouldDrawPanel then
         if Menu.EditorMode and Susano and Susano.EnableOverlay then
             Susano.EnableOverlay(true)
         elseif not Menu.EditorMode and Susano and Susano.EnableOverlay then
