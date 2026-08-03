@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 PROXY 2.2 - Remote</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:linear-gradient(135deg,#0a0015 0%,#1a0a2e 50%,#0d1117 100%);color:#fff;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:12px}
+        .container{max-width:650px;margin:0 auto}
+        .header{text-align:center;padding:20px 0 12px;border-bottom:2px solid rgba(255,215,0,.25);margin-bottom:12px}
+        .header h1{font-size:24px;background:linear-gradient(135deg,#f1c40f,#e67e22);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .header .tag{color:#666;font-size:10px;margin-top:3px}
+        .status{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:8px;padding:8px 12px;margin-bottom:12px}
+        .dot{width:8px;height:8px;border-radius:50%}.dot.on{background:#2ecc71;box-shadow:0 0 6px #2ecc71}.dot.off{background:#e74c3c}
+        .st{font-size:11px}.st.on{color:#2ecc71}.st.off{color:#e74c3c}
+        .sec{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#f1c40f;margin:14px 0 6px;padding-left:4px}
+        .g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+        .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+        button{padding:10px 6px;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:10px;transition:all .15s;color:#fff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;align-items:center;gap:3px}
+        button:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.18)}
+        button:active{transform:scale(.96)}
+        button span{font-size:15px}
+        .bg{background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.2)}.bg:hover{background:rgba(46,204,113,.22)}
+        .br{background:rgba(231,76,60,.12);border-color:rgba(231,76,60,.2)}.br:hover{background:rgba(231,76,60,.22)}
+        .bp{background:rgba(155,89,182,.12);border-color:rgba(155,89,182,.2)}.bp:hover{background:rgba(155,89,182,.22)}
+        .bb{background:rgba(52,152,219,.12);border-color:rgba(52,152,219,.2)}.bb:hover{background:rgba(52,152,219,.22)}
+        .bo{background:rgba(230,126,34,.12);border-color:rgba(230,126,34,.2)}.bo:hover{background:rgba(230,126,34,.22)}
+        .by{background:rgba(241,196,15,.12);border-color:rgba(241,196,15,.2);color:#f1c40f}.by:hover{background:rgba(241,196,15,.22)}
+        .card{background:rgba(255,255,255,.02);border-radius:8px;padding:10px;margin-bottom:6px;border:1px solid rgba(255,255,255,.04)}
+        .card .ttl{font-size:9px;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+        .ir{display:flex;gap:5px}
+        input,select{flex:1;padding:9px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:#fff;font-size:11px;outline:none}
+        input:focus{border-color:#f1c40f}
+        input.sm{flex:.4}
+        .log{background:rgba(0,0,0,.3);border-radius:8px;padding:8px;max-height:150px;overflow-y:auto;font-family:monospace;font-size:9px;margin-top:10px;border:1px solid rgba(255,255,255,.02)}
+        .log .e{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.02);color:#999}
+        .log .e.s{color:#f1c40f}.log .e.er{color:#e74c3c}
+        .ripple{animation:rip .4s ease-out}
+        @keyframes rip{from{box-shadow:0 0 0 0 rgba(241,196,15,.5)}to{box-shadow:0 0 0 20px rgba(241,196,15,0)}}
+    </style>
+</head>
+<body>
+<div class="container">
+<div class="header"><h1>🔥 PROXY 2.2 Remote</h1><div class="tag">FiveM • Web Panel</div></div>
+<div class="status"><div class="dot" id="sd"></div><span class="st" id="st">Connecting...</span></div>
+
+<div class="sec">👤 Self Options</div>
+<div class="g3">
+<button class="bg" onclick="send('heal')"><span>💚</span>Revive+Heal</button>
+<button class="bp" onclick="send('godmode','on')"><span>🛡️</span>God ON</button>
+<button class="bp" onclick="send('godmode','off')"><span>🛡️</span>God OFF</button>
+<button class="bb" onclick="send('invis','on')"><span>👻</span>Invis ON</button>
+<button class="bb" onclick="send('invis','off')"><span>👁️</span>Vis ON</button>
+<button class="by" onclick="send('noclip','on')"><span>🕊️</span>NoClip ON</button>
+<button class="by" onclick="send('noclip','off')"><span>🚶</span>NoClip OFF</button>
+<button class="br" onclick="send('suicide')"><span>💀</span>Suicide</button>
+<button class="bo" onclick="send('weapons')"><span>🔫</span>All Weapons</button>
+</div>
+
+<div class="sec">🚗 Vehicle</div>
+<div class="card"><div class="ttl">Spawn Vehicle</div>
+<div class="ir">
+<input id="model" placeholder="adder, bmx, zentorno..." value="adder">
+<button class="bo" style="flex:.3" onclick="send('car',document.getElementById('model').value)">Spawn</button>
+</div></div>
+<div class="g3">
+<button class="bg" onclick="send('repair')"><span>🔧</span>Repair</button>
+<button class="br" onclick="send('clearcops')"><span>🚔</span>Clear Cops</button>
+</div>
+
+<div class="sec">💀 Mass Actions</div>
+<div class="g3">
+<button class="br" onclick="send('killall')"><span>💀</span>Kill All</button>
+<button class="br" onclick="send('explodeall')"><span>💥</span>Explode All</button>
+<button class="bb" onclick="send('tpall')"><span>📍</span>TP All Here</button>
+<button class="bb" onclick="send('freezeall')"><span>🧊</span>Freeze All</button>
+<button class="bg" onclick="send('unfreezeall')"><span>♨️</span>Unfreeze All</button>
+<button class="br" onclick="send('delallveh')"><span>🗑️</span>Delete All Veh</button>
+</div>
+
+<div class="sec">🎯 Target Player (ID)</div>
+<div class="card"><div class="ttl">Server ID</div>
+<div class="ir">
+<input class="sm" type="number" id="sid" placeholder="ID" min="1">
+<button class="br" style="flex:.2" onclick="send('kill',document.getElementById('sid').value)">💀</button>
+<button class="br" style="flex:.2" onclick="send('explode',document.getElementById('sid').value)">💥</button>
+<button class="bb" style="flex:.2" onclick="send('freeze',document.getElementById('sid').value)">🧊</button>
+<button class="bo" style="flex:.2" onclick="send('launch',document.getElementById('sid').value)">🚀</button>
+<button class="bg" style="flex:.2" onclick="send('cage',document.getElementById('sid').value)">🔒</button>
+</div></div>
+
+<div class="sec">🤡 Trolls (ID)</div>
+<div class="g3">
+<button class="br" onclick="send('ragdoll',document.getElementById('sid').value)"><span>🤸</span>Ragdoll</button>
+<button class="bp" onclick="send('handsup',document.getElementById('sid').value)"><span>🙌</span>HandsUp</button>
+<button class="bo" onclick="send('drunk',document.getElementById('sid').value)"><span>🍺</span>Drunk</button>
+<button class="br" onclick="send('fire',document.getElementById('sid').value)"><span>🔥</span>Fire</button>
+<button class="bb" onclick="send('taze',document.getElementById('sid').value)"><span>⚡</span>Taze</button>
+<button class="bp" onclick="send('dance',document.getElementById('sid').value)"><span>💃</span>Dance</button>
+<button class="by" onclick="send('ufo',document.getElementById('sid').value)"><span>👽</span>UFO</button>
+<button class="bg" onclick="send('toilet',document.getElementById('sid').value)"><span>🚽</span>Toilet</button>
+<button class="bp" onclick="send('skycage',document.getElementById('sid').value)"><span>☁️</span>Sky Cage</button>
+<button class="bo" onclick="send('bring',document.getElementById('sid').value)"><span>📥</span>Bring</button>
+</div>
+
+<div class="sec">🚗 Vehicle Trolls (ID)</div>
+<div class="g2">
+<button class="bo" onclick="send('flipveh',document.getElementById('sid').value)"><span>🔄</span>Flip Vehicle</button>
+<button class="br" onclick="send('engoff',document.getElementById('sid').value)"><span>🔧</span>Engine OFF</button>
+</div>
+
+<div class="log" id="log"></div>
+</div>
+
+<script>
+const KEY='onyx2024';
+async function check(){
+ try{const r=await fetch('/commands');const d=await r.json();
+  document.getElementById('st').textContent='Online | Last: '+(d.cmd||'none');
+  document.getElementById('st').className='st on';document.getElementById('sd').className='dot on';
+ }catch(e){
+  document.getElementById('st').textContent='Offline';document.getElementById('st').className='st off';document.getElementById('sd').className='dot off';
+ }
+}
+async function send(cmd,...args){
+ const b=event.target.closest('button');if(b)b.classList.add('ripple');setTimeout(()=>b&&b.classList.remove('ripple'),400);
+ try{const r=await fetch('/send',{method:'POST',body:JSON.stringify({cmd,args:args.filter(a=>a),key:KEY}),headers:{'Content-Type':'application/json'}});const d=await r.json();addLog(cmd,args,d.ok?'OK':'FAIL');
+ }catch(e){addLog(cmd,args,'ERR');}
+}
+function addLog(cmd,args,st){const t=new Date().toLocaleTimeString();document.getElementById('log').innerHTML+=`<div class="e ${st==='ERR'?'er':'s'}">${t} ${cmd}(${args.filter(a=>a).join(',')}) → ${st}</div>`;document.getElementById('log').scrollTop=document.getElementById('log').scrollHeight;}
+setInterval(check,2000);check();
+</script>
+</body>
+</html>
